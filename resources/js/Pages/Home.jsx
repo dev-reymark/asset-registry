@@ -1,8 +1,7 @@
 import { IoPeopleCircleOutline } from "react-icons/io5";
-import { Card, Image } from "@heroui/react";
+import { Card, Image, Link } from "@heroui/react";
 import { TbFileImport } from "react-icons/tb";
 import { FcPrint } from "react-icons/fc";
-import { Link } from "@inertiajs/react";
 import QRScanner from "../Components/QRScanner";
 
 export default function Home() {
@@ -34,16 +33,43 @@ export default function Home() {
                 <Card
                     isPressable
                     as={Link}
+                    href="/assets/export-assets"
                     className="w-full h-[230px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
                 >
                     <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
                         <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                            EXPORT ASSETS TO PDF
+                            EXPORT ASSETS TO EXCEL
                         </h3>
                         <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
                             <TbFileImport className="text-3xl" />
                         </div>
                     </div>
+                </Card>
+
+                <Card
+                    isPressable
+                    as={Link}
+                    href="/assets/export-assets"
+                    className="w-full h-[230px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
+                >
+                    <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
+                        <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
+                            IMPORT ASSETS
+                        </h3>
+                        <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
+                            <TbFileImport className="text-3xl" />
+                        </div>
+                    </div>
+
+                    <form
+                        action="{{ route('assets.import') }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                    >
+                        @csrf
+                        <input type="file" name="file" required />
+                        <button type="submit">Import Excel/CSV</button>
+                    </form>
                 </Card>
 
                 <Card
@@ -72,7 +98,7 @@ export default function Home() {
                 >
                     <div className="p-5 flex flex-col justify-center items-center gap-4 text-center">
                         <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                            PRINT ASSETS
+                            PRINT ASSETS BY EMPLOYEE
                         </h3>
                         <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
                             <FcPrint className="w-10 h-10" />

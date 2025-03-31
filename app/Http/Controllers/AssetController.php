@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AssetsExport;
+use App\Imports\AssetsImport;
 use App\Models\Asset;
 use App\Models\AssetDetail;
 use App\Models\Employee;
@@ -16,6 +18,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\URL;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AssetController extends Controller
 {
@@ -172,7 +175,24 @@ class AssetController extends Controller
 
         // Generate PDF
         $pdf = Pdf::loadView('pdf.employee_asset_report', compact('employee'));
+        $fileName = preg_replace('/\s+/', '_', trim($employee->EMPLOYEENAME)) . ".pdf";
+        return $pdf->download($fileName);
+    }
 
-        return $pdf->download("{$employee->EMPLOYEENAME}_assets_report.pdf");
+    public function exportAssets()
+    {
+        $year = now()->year;
+        return Excel::download(new AssetsExport, "DSC_Assets_{$year}.xlsx");
+    }
+
+    public function importAssets(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv'
+        ]);
+
+        Excel::import(new AssetsImport, $request->file('file'));
+
+        return back()->with('success', 'Assets imported successfully.');
     }
 }

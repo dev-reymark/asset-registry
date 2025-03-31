@@ -48,7 +48,7 @@ export default function AssetView() {
                 <table className="w-full border-collapse border border-gray-200 mb-6">
                     <thead>
                         <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">QR Code</th>
+                            {/* <th className="border px-4 py-2">QR Code</th> */}
                             <th className="border px-4 py-2">Asset No</th>
                             <th className="border px-4 py-2">Asset ID</th>
                             <th className="border px-4 py-2">Product ID</th>
@@ -84,7 +84,7 @@ export default function AssetView() {
                                     key={detail.ASSETNO}
                                     className="hover:bg-gray-50"
                                 >
-                                    <td className="border px-4 py-2">
+                                    {/* <td className="border px-4 py-2">
                                         <img
                                             src={route("assets.qr", {
                                                 systemAssetId:
@@ -92,7 +92,17 @@ export default function AssetView() {
                                             })}
                                             alt="QR Code"
                                         />
-                                    </td>
+                                        <a
+                                            href={route("assets.qr", {
+                                                systemAssetId:
+                                                    detail.SYSTEMASSETID,
+                                            })}
+                                            target="_blank"
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            View
+                                        </a>
+                                    </td> */}
                                     <td className="border px-4 py-2">
                                         {detail.ASSETNO || "--"}
                                     </td>

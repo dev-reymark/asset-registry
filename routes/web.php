@@ -32,6 +32,8 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('assets')->group(function () {
         Route::get('/all', [AssetController::class, 'index'])->name('assets.index');
         Route::get('/{id}', [AssetController::class, 'show'])->name('assets.show');
+        Route::get('/export-assets', [AssetController::class, 'exportAssets'])->name('assets.export');
+        Route::post('/import-assets', [AssetController::class, 'importAssets'])->name('assets.import');
     });
 
     Route::get('/employee/{id}', [AssetController::class, 'generateEmployeeAssetReport'])
