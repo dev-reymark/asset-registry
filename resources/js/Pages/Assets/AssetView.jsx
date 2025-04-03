@@ -1,5 +1,7 @@
-import { Head, Link, usePage } from "@inertiajs/react";
-import Authenticated from "../Layouts/Authenticated";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import Authenticated from "../../Layouts/Authenticated";
+import { Button } from "@heroui/react";
+import toast from "react-hot-toast";
 
 export default function AssetView() {
     const { asset } = usePage().props; // Get asset
@@ -27,28 +29,31 @@ export default function AssetView() {
                 {/* General Asset Info */}
                 <div className="border p-4 rounded-lg mb-6">
                     <p>
-                        <strong>Asset ID:</strong> {asset?.ASSETSID || "--"}
+                        <strong>Asset ID:</strong> {asset?.ASSETSID}
                     </p>
                     <p>
-                        <strong>Employee ID:</strong>{" "}
-                        {asset?.EMPLOYEEID || "--"}
+                        <strong>Employee ID:</strong>
+                        {asset?.EMPLOYEEID}
                     </p>
                     <p>
-                        <strong>Employee Name:</strong>{" "}
-                        {asset?.employee?.EMPLOYEENAME || "--"}
-                    </p>
-                    <p>
-                        <strong>Asset Type:</strong>{" "}
-                        {asset?.assetType?.ASSETTYPE || "--"}
+                        <strong>Employee Name:</strong>
+                        {asset.EMPLOYEENAME}
                     </p>
                 </div>
 
                 {/* Asset Details Table */}
                 <h2 className="text-xl font-bold mb-2">Asset Details</h2>
+                <Button
+                    as={Link}
+                    color="primary"
+                    href={route("assets.create", { id: asset.ASSETSID })}
+                >
+                    Add New Asset
+                </Button>
                 <table className="w-full border-collapse border border-gray-200 mb-6">
                     <thead>
                         <tr className="bg-gray-100">
-                            {/* <th className="border px-4 py-2">QR Code</th> */}
+                            <th className="border px-4 py-2">Action</th>
                             <th className="border px-4 py-2">Asset No</th>
                             <th className="border px-4 py-2">Asset ID</th>
                             <th className="border px-4 py-2">Product ID</th>
@@ -84,25 +89,59 @@ export default function AssetView() {
                                     key={detail.ASSETNO}
                                     className="hover:bg-gray-50"
                                 >
-                                    {/* <td className="border px-4 py-2">
-                                        <img
-                                            src={route("assets.qr", {
-                                                systemAssetId:
-                                                    detail.SYSTEMASSETID,
+                                    <td className="border px-4 py-2 gap-2">
+                                        <Button
+                                            as={Link}
+                                            href={route("assets.edit", {
+                                                assetId: detail.ASSETID,
+                                                assetNo: detail.ASSETNO,
                                             })}
-                                            alt="QR Code"
-                                        />
-                                        <a
-                                            href={route("assets.qr", {
-                                                systemAssetId:
-                                                    detail.SYSTEMASSETID,
-                                            })}
-                                            target="_blank"
-                                            className="text-blue-500 hover:underline"
+                                            color="primary"
+                                            size="sm"
                                         >
-                                            View
-                                        </a>
-                                    </td> */}
+                                            Update
+                                        </Button>
+                                        <Button
+                                            as="button"
+                                            onPress={() => {
+                                                axios
+                                                    .post(
+                                                        route(
+                                                            "assets.destroy",
+                                                            {
+                                                                assetId:
+                                                                    detail.ASSETID,
+                                                                assetNo:
+                                                                    detail.ASSETNO,
+                                                            }
+                                                        ),
+                                                        {
+                                                            _method: "DELETE", // Spoofing DELETE method
+                                                        }
+                                                    )
+                                                    .then((response) => {
+                                                        toast.success(
+                                                            "Asset deleted successfully"
+                                                        );
+                                                        router.reload();
+                                                    })
+                                                    .catch((error) => {
+                                                        toast.error(
+                                                            "Failed to delete asset"
+                                                        );
+                                                        console.error(
+                                                            error.response
+                                                                ?.data ||
+                                                                error.message
+                                                        );
+                                                    });
+                                            }}
+                                            color="danger"
+                                            size="sm"
+                                        >
+                                            Delete
+                                        </Button>
+                                    </td>
                                     <td className="border px-4 py-2">
                                         {detail.ASSETNO || "--"}
                                     </td>

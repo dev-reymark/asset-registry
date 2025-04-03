@@ -17,4 +17,9 @@ class AssetType extends Model
         'ASSETTYPEID',
         'ASSETTYPE',
     ];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'ASSETTYPE', 'ASSETTYPEID');
+    }
 }

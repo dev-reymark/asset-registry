@@ -10,7 +10,7 @@ class AssetDetail extends Model
     use HasFactory;
 
     protected $table = 'AssetDetails';
-    protected $primaryKey = 'EMPLOYEEID';
+    protected $primaryKey = 'ASSETNO';
     public $timestamps = false;
 
     protected $fillable = [
@@ -43,5 +43,10 @@ class AssetDetail extends Model
     public function asset()
     {
         return $this->belongsTo(Asset::class, 'ASSETID', 'ASSETSID');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'PRODUCTID', 'PRODUCTID');
     }
 }

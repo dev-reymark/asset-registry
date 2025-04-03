@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
 import { IoPeopleCircleOutline } from "react-icons/io5";
 import { Button } from "@heroui/react";
-import { FaBoxOpen, FaDesktop, FaMapMarkerAlt } from "react-icons/fa";
+import { FaBoxOpen, FaDesktop, FaMapMarkerAlt, FaProductHunt } from "react-icons/fa";
 import ApplicationLogo from "../Components/ApplicationLogo";
 import { MdCorporateFare } from "react-icons/md";
 import toast from "react-hot-toast";
@@ -99,6 +99,28 @@ export default function Authenticated({ children }) {
                     >
                         <FaBoxOpen className="w-5 h-5" />
                         <span className="ml-4">Employee Assets</span>
+                    </Link>
+                    <Link
+                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
+                            route().current("components.index")
+                                ? "bg-indigo-600"
+                                : "hover:bg-indigo-600"
+                        }`}
+                        href={route("components.index")}
+                    >
+                        <FaProductHunt className="w-5 h-5" />
+                        <span className="ml-4">Asset Component</span>
+                    </Link>
+                    <Link
+                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
+                            url.startsWith("/products")
+                                ? "bg-indigo-600"
+                                : "hover:bg-indigo-600"
+                        }`}
+                        href="/products"
+                    >
+                        <FaProductHunt className="w-5 h-5" />
+                        <span className="ml-4">Products</span>
                     </Link>
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${

@@ -14,7 +14,6 @@ class Asset extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'ASSETSID',
         'EMPLOYEEID',
         'EMPLOYEENAME',
     ];

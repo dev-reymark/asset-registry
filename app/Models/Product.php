@@ -21,4 +21,16 @@ class Product extends Model
         'ASSETTYPE',
         'ASSETCOMPONENT',
     ];
+
+    // Relationship with AssetType
+    public function assetType()
+    {
+        return $this->belongsTo(AssetType::class, 'ASSETTYPE', 'ASSETTYPEID');
+    }
+
+    // Relationship with AssetComponent
+    public function assetComponent()
+    {
+        return $this->belongsTo(AssetComponent::class, 'ASSETCOMPONENT', 'ASSETCOMPNETID');
+    }
 }

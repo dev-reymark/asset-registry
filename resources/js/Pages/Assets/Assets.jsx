@@ -1,14 +1,13 @@
 import { Head, Link, usePage } from "@inertiajs/react";
-import Authenticated from "../Layouts/Authenticated";
+import Authenticated from "../../Layouts/Authenticated";
+import { Button } from "@heroui/react";
 
 export default function Assets() {
     const { assets } = usePage().props; // Get assets data
+    // console.log(assets);
 
     return (
-        <Authenticated
-            auth={usePage().props.auth}
-            errors={usePage().props.errors}
-        >
+        <Authenticated>
             <Head title="Employee Assets" />
             <div className="p-6 bg-white shadow rounded-lg">
                 <h1 className="text-2xl font-bold mb-4">Employee Assets</h1>
@@ -37,24 +36,21 @@ export default function Assets() {
                                         {asset.EMPLOYEEID}
                                     </td>
                                     <td className="border px-4 py-2">
-                                        {asset.employee
-                                            ? asset.employee.EMPLOYEENAME
-                                            : "N/A"}
+                                        {asset.EMPLOYEENAME}
                                     </td>
                                     <td className="border px-4 py-2 gap-2 flex justify-center">
-                                        <Link
+                                        <Button
+                                            as={Link}
+                                            size="sm"
+                                            color="primary"
                                             href={`/assets/${asset.ASSETSID}`}
-                                            className="text-blue-500 hover:underline"
                                         >
-                                            View
-                                        </Link>
-                                        {/* <img
-                                            src={route("assets.qr", {
-                                                id: asset.ASSETSID,
-                                            })}
-                                            alt="QR Code"
-                                        /> */}
-                                        <a
+                                            VIEW
+                                        </Button>
+                                        <Button
+                                            as={Link}
+                                            color="success"
+                                            size="sm"
                                             href={route(
                                                 "employee.asset.report",
                                                 { id: asset.EMPLOYEEID }
@@ -62,8 +58,8 @@ export default function Assets() {
                                             target="_blank"
                                             download
                                         >
-                                            Print
-                                        </a>
+                                            PRINT
+                                        </Button>
                                     </td>
                                 </tr>
                             ))

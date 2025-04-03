@@ -1,19 +1,60 @@
-import { IoPeopleCircleOutline } from "react-icons/io5";
-import { Card, Image, Link } from "@heroui/react";
+import { IoLogOut, IoPeopleCircleOutline } from "react-icons/io5";
+import { Button, Card, Image, Link } from "@heroui/react";
 import { TbFileImport } from "react-icons/tb";
 import { FcPrint } from "react-icons/fc";
 import QRScanner from "../Components/QRScanner";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import ApplicationLogo from "../Components/ApplicationLogo";
+import { router } from "@inertiajs/react";
 
 export default function Home() {
+    const [loading, setLoading] = useState(false);
+
+    const handleExportAssets = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get("/assets/export/download", {
+                responseType: "blob", // Important for downloading files
+            });
+
+            // Create a download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute(
+                "download",
+                "DSC_Assets_Registry_Information.xlsx"
+            );
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success("Assets exported successfully");
+        } catch (error) {
+            toast.error("Failed to export assets");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        router.post("/logout");
+        router.visit("/login");
+        localStorage.removeItem("token");
+        toast.success("Logged out successfully");
+    };
+
     return (
-        <div className="bg-gray-200 h-screen w-full flex flex-col items-center justify-center">
-            <div className="flex flex-col mb-8">
+        <div className="bg-gray-200 min-h-screen w-full flex flex-col items-center justify-center p-4">
+            <div className="flex mb-8 text-center justify-center items-center flex-col">
+                <ApplicationLogo className="w-24 h-24 mx-auto mb-4" />
                 <h1 className="text-3xl font-bold text-gray-800 mb-4">
                     Asset Registry Information
                 </h1>
             </div>
 
-            <div className="max-w-[900px] gap-2 grid grid-cols-12 grid-rows-2 px-8">
+            <div className="max-w-3xl gap-4 grid grid-cols-12 grid-rows-2 px-4 w-full">
                 <Card
                     isFooterBlurred
                     isPressable
@@ -32,13 +73,14 @@ export default function Home() {
 
                 <Card
                     isPressable
-                    as={Link}
-                    href="/assets/export-assets"
+                    as={Button}
+                    isLoading={loading}
+                    onPress={handleExportAssets}
                     className="w-full h-[230px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
                 >
                     <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
                         <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                            EXPORT ASSETS TO EXCEL
+                            EXPORT ASSETS
                         </h3>
                         <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
                             <TbFileImport className="text-3xl" />
@@ -46,10 +88,10 @@ export default function Home() {
                     </div>
                 </Card>
 
-                <Card
+                {/* <Card
                     isPressable
                     as={Link}
-                    href="/assets/export-assets"
+                    href="/assets/import-assets"
                     className="w-full h-[230px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
                 >
                     <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
@@ -62,15 +104,25 @@ export default function Home() {
                     </div>
 
                     <form
-                        action="{{ route('assets.import') }}"
+                        action="/assets/import"
                         method="POST"
-                        enctype="multipart/form-data"
+                        encType="multipart/form-data"
+                        className="w-full text-center"
                     >
-                        @csrf
-                        <input type="file" name="file" required />
-                        <button type="submit">Import Excel/CSV</button>
+                        <input
+                            type="file"
+                            name="file"
+                            required
+                            className="my-2"
+                        />
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                        >
+                            Import Excel/CSV
+                        </button>
                     </form>
-                </Card>
+                </Card> */}
 
                 <Card
                     as={Link}
@@ -88,20 +140,18 @@ export default function Home() {
                         </div>
                     </div>
                 </Card>
-
                 <Card
+                    onPress={handleLogout}
                     isFooterBlurred
                     isPressable
-                    as={Link}
-                    href="/assets/all"
-                    className="w-full h-[250px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
+                    className="bg-danger-50 w-full h-[200px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
                 >
-                    <div className="p-5 flex flex-col justify-center items-center gap-4 text-center">
+                    <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
                         <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                            PRINT ASSETS BY EMPLOYEE
+                            SIGN OUT
                         </h3>
-                        <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
-                            <FcPrint className="w-10 h-10" />
+                        <div className="flex justify-center items-center size-14 bg-danger-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
+                            <IoLogOut className="w-10 h-10" />
                         </div>
                     </div>
                 </Card>

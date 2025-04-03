@@ -7,6 +7,7 @@ use App\Imports\AssetsImport;
 use App\Models\Asset;
 use App\Models\AssetDetail;
 use App\Models\Employee;
+use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,6 +19,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\URL;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AssetController extends Controller
@@ -31,7 +33,7 @@ class AssetController extends Controller
     {
         $assets = Asset::with('employee')->get();
 
-        return Inertia::render('Assets', [
+        return Inertia::render('Assets/Assets', [
             'assets' => $assets,
             'title' => 'Assets',
             'description' => 'List of all employee assets',
@@ -48,57 +50,182 @@ class AssetController extends Controller
     {
         $asset = Asset::with(['employee', 'assetDetails', 'assetType', 'assetComponents'])->findOrFail($id);
 
-        return Inertia::render('AssetView', [
+        return Inertia::render('Assets/AssetView', [
             'asset' => $asset,
             'title' => 'Asset Details',
             'description' => 'Detailed view of asset',
         ]);
     }
 
-    /**
-     * Generate QR code for an asset.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function generateQrCodeByAssetID($id)
+    public function create($id): Response
     {
-        $asset = Asset::findOrFail($id);
-        $url = URL::route('assets.show', ['id' => $id]);
+        $asset = Asset::with(['employee', 'assetDetails', 'assetType', 'assetComponents'])->findOrFail($id);
+        $products = Product::all();
 
-        // Create QR Code
-        $builder = new Builder(
-            writer: new PngWriter(),
-            writerOptions: [],
-            validateResult: false,
-            data: $url,
-            encoding: new Encoding('UTF-8'),
-            errorCorrectionLevel: ErrorCorrectionLevel::High,
-            size: 300,
-            margin: 10,
-            roundBlockSizeMode: RoundBlockSizeMode::Margin
-        );
+        // Get the last EMPNO and increment it
+        $assetno = AssetDetail::max('ASSETNO');
+        $newassetno = $assetno ? $assetno + 1 : null;
 
-        $result = $builder->build();
+        return Inertia::render('Assets/AddAsset', [
+            'asset' => $asset,
+            'products' => $products,
+            'assetno' => $newassetno,
+            'title' => 'Add Assets',
+            'description' => 'Add a new asset',
+        ]);
+    }
 
-        return response($result->getString(), 200, ['Content-Type' => 'image/png']);
+    public function store(Request $request, $employeeId)
+    {
+        Log::info($request);
+
+        $validator = Validator::make($request->all(), [
+            'ASSETSID' => 'nullable|integer',
+            'ASSETNO' => 'required|integer|unique:AssetDetails,ASSETNO',
+            'PRODUCTID' => 'nullable|string',
+            'DESCRIPTION' => 'nullable|string',
+            'MODEL' => 'nullable|string',
+            'SERIALNO' => 'nullable|string|unique:AssetDetails,SERIALNO',
+            'STATUS' => 'nullable|string',
+            'SYSTEMASSETID' => 'nullable|string|unique:AssetDetails,SYSTEMASSETID',
+        ]);
+
+        if ($validator->fails()) {
+            Log::error('Validation failed: ' . implode(', ', $validator->errors()->all()));
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Find the employee
+        $employee = Employee::findOrFail($employeeId);
+
+        try {
+            AssetDetail::create([
+                'ASSETID' => $request->ASSETSID,
+                'EMPLOYEEID' => $employee->EMPNO,
+                'ASSETNO' => $request->ASSETNO,
+                'PRODUCTID' => $request->PRODUCTID,
+                'DESCRIPTION' => $request->DESCRIPTION,
+                'MODEL' => $request->MODEL,
+                'SERIALNO' => $request->SERIALNO,
+                'STATUS' => $request->STATUS,
+                'SYSTEMASSETID' => $request->SYSTEMASSETID,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error saving AssetDetail: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'There was an error saving the asset.');
+        }
+
+        return redirect(route('assets.index'))->with('success', 'Asset added successfully.');
     }
 
     /**
-     * Show an asset using QR code scan.
+     * Delete a specific asset.
      *
-     * @param int $id
-     * @return \Inertia\Response
+     * @param  \App\Models\
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function showAssetQrByAssetID($id): Response
+    public function destroy($assetId, $assetNo)
     {
-        $asset = Asset::with(['employee', 'assetDetails'])->findOrFail($id);
+        Log::info("Attempting to delete asset detail with ASSETNO: $assetNo within ASSETID: $assetId");
 
-        return Inertia::render('AssetQrView', [
-            'asset' => $asset,
-            'title' => 'Asset Details via QR',
-            'description' => 'View of asset details',
+        $assetDetail = AssetDetail::where('ASSETID', $assetId)
+            ->where('ASSETNO', $assetNo)
+            ->firstOrFail();
+
+        Log::info("Found AssetDetail to delete: " . json_encode($assetDetail));
+
+        $assetDetail->delete();
+
+        return redirect(route('assets.index'))->with('success', 'Asset detail deleted successfully!');
+    }
+
+    public function edit($assetId, $assetNo)
+    {
+        // Fetch the asset detail and related data
+        $assetDetail = AssetDetail::where('ASSETID', $assetId)
+            ->where('ASSETNO', $assetNo)
+            ->with('asset.employee')
+            ->firstOrFail();
+
+        // Fetch employee details
+        $employee = Employee::findOrFail($assetDetail->EMPLOYEEID);
+
+        $products = Product::all();
+
+        return Inertia::render('Assets/EditAsset', [
+            'assetDetail' => $assetDetail,
+            'employee' => $employee,
+            'products' => $products,
+            'title' => 'Edit Asset',
+            'description' => 'Update asset details',
         ]);
+    }
+
+    public function update(Request $request, $assetId, $assetNo)
+    {
+        // Log the request
+        Log::info($request);
+
+        Log::info("Attempting to update asset detail with ASSETNO: $assetNo within ASSETID: $assetId");
+
+        // Validate incoming request
+        $validator = Validator::make($request->all(), [
+            'PRODUCTID' => 'nullable|string',
+            'DESCRIPTION' => 'nullable|string',
+            'MODEL' => 'nullable|string',
+            'SERIALNO' => 'nullable|string|unique:AssetDetails,SERIALNO,' . $assetNo . ',ASSETNO',
+            'ISSUEDTO' => 'nullable|string',
+            'DATEISSUUED' => 'nullable|date',
+            'IMAGEPATH' => 'nullable|string',
+            'SERIALTYPE' => 'nullable|string',
+            'STATUS' => 'nullable|string',
+            'ASSETFROM' => 'nullable|string',
+            'CONDITIONS' => 'nullable|string',
+            'WORKSTAION' => 'nullable|string',
+            'TYPESIZE' => 'nullable|string',
+            'NOPRINT' => 'nullable|integer',
+            'COMPONENT' => 'nullable|string',
+            'WITHCOMPONENTS' => 'nullable|integer',
+            'SYSTEMASSETID' => 'nullable|string|unique:AssetDetails,SYSTEMASSETID,' . $assetNo . ',ASSETNO',
+            'SYSTEMCOMPONENTID' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            Log::error('Validation failed: ' . implode(', ', $validator->errors()->all()));
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Find the specific asset detail
+        $assetDetail = AssetDetail::where('ASSETID', $assetId)
+            ->where('ASSETNO', $assetNo)
+            ->firstOrFail();
+
+        Log::info("Found AssetDetail to update: " . json_encode($assetDetail));
+
+        $assetDetail->update([
+            'PRODUCTID' => $request->PRODUCTID,
+            'DESCRIPTION' => $request->DESCRIPTION,
+            'MODEL' => $request->MODEL,
+            'SERIALNO' => $request->SERIALNO,
+            'ISSUEDTO' => $request->ISSUEDTO,
+            'DATEISSUUED' => $request->DATEISSUUED,
+            'IMAGEPATH' => $request->IMAGEPATH,
+            'SERIALTYPE' => $request->SERIALTYPE,
+            'STATUS' => $request->STATUS,
+            'ASSETFROM' => $request->ASSETFROM,
+            'CONDITIONS' => $request->CONDITIONS,
+            'WORKSTAION' => $request->WORKSTAION,
+            'TYPESIZE' => $request->TYPESIZE,
+            'NOPRINT' => $request->NOPRINT,
+            'COMPONENT' => $request->COMPONENT,
+            'WITHCOMPONENTS' => $request->WITHCOMPONENTS,
+            'SYSTEMASSETID' => $request->SYSTEMASSETID,
+            'SYSTEMCOMPONENTID' => $request->SYSTEMCOMPONENTID,
+        ]);
+
+        Log::info("Updated AssetDetail: " . json_encode($assetDetail));
+
+        return redirect(route('assets.index'))->with('success', 'Asset detail updated successfully!');
     }
 
     /**
@@ -175,14 +302,14 @@ class AssetController extends Controller
 
         // Generate PDF
         $pdf = Pdf::loadView('pdf.employee_asset_report', compact('employee'));
-        $fileName = preg_replace('/\s+/', '_', trim($employee->EMPLOYEENAME)) . ".pdf";
+        $fileName = preg_replace('/\s+/', '_', trim($employee->EMPLOYEENAME)) . '_Asset_Registry_Information.pdf';
         return $pdf->download($fileName);
     }
 
     public function exportAssets()
     {
         $year = now()->year;
-        return Excel::download(new AssetsExport, "DSC_Assets_{$year}.xlsx");
+        return Excel::download(new AssetsExport, "DSC_Assets_Registry_Information_{$year}.xlsx");
     }
 
     public function importAssets(Request $request)

@@ -6,7 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="description" content="Assets Registry">
         <meta name="author" content="Rey Mark Tapar">
-        <title>Assets Registry</title>
+        <title inertia>{{ config('app.name') . ' - Assets Registry' }}</title>
         @routes
         @viteReactRefresh
         @vite('resources/js/app.jsx')
