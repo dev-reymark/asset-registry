@@ -22,4 +22,9 @@ class AssetType extends Model
     {
         return $this->hasMany(Product::class, 'ASSETTYPE', 'ASSETTYPEID');
     }
+
+    public function assetComponents()
+    {
+        return $this->hasMany(AssetComponent::class, 'ASSETTYPEID', 'ASSETTYPEID');
+    }
 }

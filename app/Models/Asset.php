@@ -16,6 +16,7 @@ class Asset extends Model
     protected $fillable = [
         'EMPLOYEEID',
         'EMPLOYEENAME',
+        'archived',
     ];
 
     // Relationship with Employee
@@ -40,5 +41,15 @@ class Asset extends Model
     public function assetComponents()
     {
         return $this->hasMany(AssetComponent::class, 'ASSETTYPEID', 'ASSETTYPEID');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('archived', true);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('archived', false);
     }
 }

@@ -7,13 +7,14 @@ use App\Models\AssetType;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Str;
 
 class AssetComponentController extends Controller
 {
     public function index(): Response
     {
         // Eager load products and assetType
-        $assetComponents = AssetComponent::with('products.assetType')->get();
+        $assetComponents = AssetComponent::with('assetType')->get();
 
         return Inertia::render('Assets/AssetComponent', [
             'assetComponents' => $assetComponents,
@@ -42,11 +43,12 @@ class AssetComponentController extends Controller
         ]);
 
         $newId = AssetComponent::max('ASSETCOMPNETID') + 1;
+        $componentName = Str::limit($request->ASSETCOMPONENTNAME, 50, '');
 
         // Create the AssetComponent
         AssetComponent::create([
             'ASSETCOMPNETID' => $newId,
-            'ASSETCOMPONENTNAME' => $request->ASSETCOMPONENTNAME,
+            'ASSETCOMPONENTNAME' => $componentName,
             'ASSETTYPEID' => $request->ASSETTYPEID,
         ]);
 

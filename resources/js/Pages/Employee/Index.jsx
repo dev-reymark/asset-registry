@@ -1,11 +1,59 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
-import { Button } from "@heroui/react";
+import {
+    addToast,
+    Button,
+    cn,
+    Table,
+    TableHeader,
+    TableColumn,
+    TableBody,
+    TableCell,
+    TableRow,
+    Input,
+} from "@heroui/react";
 import toast from "react-hot-toast";
 import { route } from "ziggy-js";
+import { GoArchive } from "react-icons/go";
+import { CiSearch } from "react-icons/ci";
+import { useState } from "react";
+import { useDebounce } from "../../hooks/useDebounce";
 
 export default function Employees() {
-    const { employees } = usePage().props; // Get employees data
+    const { employees, title, filters } = usePage().props; // Get employees data
+    const [search, setSearch] = useState(filters.search || "");
+    const [sort, setSort] = useState(filters.sort || "");
+
+    const handleSearch = (value) => {
+        router.get(
+            route("employees.index"),
+            { search: value, sort },
+            { preserveState: true, replace: true }
+        );
+    };
+
+    const debouncedSearch = useDebounce(handleSearch, 300);
+
+    const onSearchChange = (e) => {
+        const value = e.target.value;
+        setSearch(value);
+        debouncedSearch(value);
+    };
+
+    const onClear = () => {
+        setSearch("");
+        router.get(route("employees.index"), { search: "", sort });
+    };
+
+    const toggleSort = () => {
+        const newSort = sort === "name_asc" ? "name_desc" : "name_asc";
+        setSort(newSort);
+        router.get(
+            route("employees.index"),
+            { search, sort: newSort },
+            { preserveState: true, replace: true }
+        );
+    };
 
     const handleDelete = (employeeId) => {
         if (
@@ -16,7 +64,7 @@ export default function Employees() {
             // Send the DELETE request with _method
             axios
                 .post(route("employees.destroy", { employee: employeeId }), {
-                    _method: "DELETE", // This ensures Laravel treats the request as a DELETE method
+                    _method: "DELETE",
                 })
                 .then((response) => {
                     toast.success("Asset deleted successfully");
@@ -32,99 +80,135 @@ export default function Employees() {
         }
     };
 
+    const archiveEmployee = async (id) => {
+        try {
+            await toast.promise(
+                axios.post(route("employees.archive", { employee: id }), {
+                    _method: "PATCH",
+                }),
+                {
+                    loading: "Archiving employee...",
+                    success: <b>Employee archived successfully!</b>,
+                    error: <b>Failed to archive employee.</b>,
+                }
+            );
+            router.reload();
+        } catch (error) {
+            console.error("Error archiving employee:", error);
+        }
+    };
+
     return (
         <Authenticated>
             <Head title="Employees" />
             <div className="p-6 bg-white shadow rounded-lg">
-                <h1 className="text-2xl font-bold mb-4">Employees</h1>
-                <Button
-                    as={Link}
-                    href={route("employees.create")}
-                    color="primary"
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold mb-4">{title}</h2>
+
+                    <Button
+                        as={Link}
+                        href={route("employees.archived")}
+                        color="warning"
+                        variant="flat"
+                        startContent={<GoArchive className="size-5" />}
+                    >
+                        Archived Employees
+                    </Button>
+                </div>
+
+                <Table
+                    aria-label="Employee Table"
+                    className="mt-4"
+                    isStriped
+                    topContent={
+                        <div className="flex items-center justify-between mb-4">
+                            <Button
+                                as={Link}
+                                href={route("employees.create")}
+                                color="primary"
+                            >
+                                Add Employee
+                            </Button>
+                            <Input
+                                isClearable
+                                className="w-full sm:max-w-[44%]"
+                                placeholder="Search by name..."
+                                startContent={<CiSearch className="size-5" />}
+                                value={search}
+                                onClear={onClear}
+                                onChange={onSearchChange}
+                            />
+                        </div>
+                    }
                 >
-                    Add Employee
-                </Button>
-                <table className="w-full mt-4 border-collapse border border-gray-200">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">Employee ID</th>
-                            {/* <th className="border px-4 py-2">Employee ID</th> */}
-                            <th className="border px-4 py-2">Employee Name</th>
-                            <th className="border px-4 py-2">Department</th>
-                            <th className="border px-4 py-2">Location</th>
-                            <th className="border px-4 py-2">Workstation</th>
-                            <th className="border px-4 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {employees.length > 0 ? (
-                            employees.map((employee, index) => (
-                                <tr
-                                    key={employee.EMPNO}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="border px-4 py-2">
-                                        {employee.EMPLOYEEID}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {employee.EMPLOYEENAME}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {employee.department
-                                            ? employee.department.DEPARTMENTNAME
-                                            : "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {employee.location
-                                            ? employee.location.LOCATIONNAME
-                                            : "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {employee.workstation
-                                            ? employee.workstation.WORKSTATION
-                                            : "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        <div className="flex gap-2">
-                                            {/* <Button
-                                            size="sm"
-                                            color="danger"
-                                            onPress={() =>
-                                                handleDelete(employee.EMPNO)
-                                            }
-                                        >
-                                            Delete
-                                        </Button> */}
-                                            <Button size="sm" color="warning">
-                                                Archive
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                color="primary"
-                                                as={Link}
-                                                href={route(
-                                                    "employees.edit",
-                                                    employee.EMPNO
-                                                )}
-                                            >
-                                                Update
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="5"
-                                    className="border px-4 py-2 text-center text-gray-500"
-                                >
-                                    No employees found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                    <TableHeader>
+                        <TableColumn>EMPLOYEE ID</TableColumn>
+                        <TableColumn
+                            onClick={toggleSort}
+                            className="cursor-pointer select-none"
+                        >
+                            EMPLOYEE NAME
+                            {sort === "name_asc"
+                                ? " 🔼"
+                                : sort === "name_desc"
+                                ? " 🔽"
+                                : ""}
+                        </TableColumn>
+                        <TableColumn>DEPARTMENT</TableColumn>
+                        <TableColumn>LOCATION</TableColumn>
+                        <TableColumn>WORKSTATION</TableColumn>
+                        <TableColumn>ACTION</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent={"No rows to display."}>
+                        {employees.map((employee) => (
+                            <TableRow key={employee.EMPNO}>
+                                <TableCell>{employee.EMPLOYEEID}</TableCell>
+                                <TableCell>{employee.EMPLOYEENAME}</TableCell>
+                                <TableCell>
+                                    {employee.department?.DEPARTMENTNAME}
+                                </TableCell>
+                                <TableCell>
+                                    {employee.location?.LOCATIONNAME}
+                                </TableCell>
+                                <TableCell>
+                                    {employee.workstation?.WORKSTATION}
+                                </TableCell>
+                                <TableCell className="flex gap-2">
+                                    {/* <Button
+                                        color="danger"
+                                        onPress={() =>
+                                            handleDelete(employee.EMPNO)
+                                        }
+                                    >
+                                        Delete
+                                    </Button> */}
+                                    <Button
+                                        className="w-full"
+                                        size="sm"
+                                        color="warning"
+                                        onPress={() =>
+                                            archiveEmployee(employee.EMPNO)
+                                        }
+                                    >
+                                        Archive
+                                    </Button>
+                                    <Button
+                                        className="w-full"
+                                        size="sm"
+                                        color="success"
+                                        as={Link}
+                                        href={route(
+                                            "employees.edit",
+                                            employee.EMPNO
+                                        )}
+                                    >
+                                        Update
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
         </Authenticated>
     );

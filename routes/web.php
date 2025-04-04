@@ -33,7 +33,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
         Route::put('/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
         Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+        Route::patch('/{employee}/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
+        Route::patch('/{employee}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
+        Route::get('/archived', [EmployeeController::class, 'archived'])->name('employees.archived');
     });
+
 
     // Asset Routes
     Route::prefix('assets')->group(function () {

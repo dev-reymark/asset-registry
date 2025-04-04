@@ -16,6 +16,22 @@ export default function CreateAssetComponent({ assetTypes }) {
         });
     };
 
+    const handleAssetTypeChange = (e) => {
+        const selectedTypeId = Number(e.target.value); // Convert to number
+        const selectedType = assetTypes.find(
+            (type) => type.ASSETTYPEID === selectedTypeId
+        );
+
+        setData({
+            ...data,
+            ASSETTYPEID: selectedTypeId,
+            ASSETCOMPONENTNAME: selectedType
+                ? `${selectedType.ASSETTYPE}-`
+                : "",
+        });
+    };
+
+
     return (
         <Authenticated>
             <Head title="Create Asset Component" />
@@ -25,6 +41,37 @@ export default function CreateAssetComponent({ assetTypes }) {
                 </h1>
 
                 <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label
+                            htmlFor="ASSETTYPEID"
+                            className="block text-sm font-medium text-gray-700"
+                        >
+                            Asset Type
+                        </label>
+                        <select
+                            required
+                            id="ASSETTYPEID"
+                            name="ASSETTYPEID"
+                            value={data.ASSETTYPEID}
+                            onChange={handleAssetTypeChange}
+                            className="mt-1 p-2 block w-full border-gray-300 rounded-md"
+                        >
+                            <option value="">Select Asset Type</option>
+                            {assetTypes.map((type) => (
+                                <option
+                                    key={type.ASSETTYPEID}
+                                    value={type.ASSETTYPEID}
+                                >
+                                    {type.ASSETTYPE}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.ASSETTYPEID && (
+                            <div className="text-red-500 text-xs mt-1">
+                                {errors.ASSETTYPEID}
+                            </div>
+                        )}
+                    </div>
                     <div className="mb-4">
                         <label
                             htmlFor="ASSETCOMPONENTNAME"
@@ -42,42 +89,10 @@ export default function CreateAssetComponent({ assetTypes }) {
                             }
                             className="mt-1 p-2 block w-full border-gray-300 rounded-md"
                         />
+
                         {errors.ASSETCOMPONENTNAME && (
                             <div className="text-red-500 text-xs mt-1">
                                 {errors.ASSETCOMPONENTNAME}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="mb-4">
-                        <label
-                            htmlFor="ASSETTYPEID"
-                            className="block text-sm font-medium text-gray-700"
-                        >
-                            Asset Type
-                        </label>
-                        <select
-                            id="ASSETTYPEID"
-                            name="ASSETTYPEID"
-                            value={data.ASSETTYPEID}
-                            onChange={(e) =>
-                                setData("ASSETTYPEID", e.target.value)
-                            }
-                            className="mt-1 p-2 block w-full border-gray-300 rounded-md"
-                        >
-                            <option value="">Select Asset Type</option>
-                            {assetTypes.map((type) => (
-                                <option
-                                    key={type.ASSETTYPEID}
-                                    value={type.ASSETTYPEID}
-                                >
-                                    {type.ASSETTYPE}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.ASSETTYPEID && (
-                            <div className="text-red-500 text-xs mt-1">
-                                {errors.ASSETTYPEID}
                             </div>
                         )}
                     </div>

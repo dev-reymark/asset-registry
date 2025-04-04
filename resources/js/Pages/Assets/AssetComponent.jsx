@@ -26,11 +26,10 @@ export default function AssetComponent() {
                             <th className="border px-4 py-2">
                                 Asset Component ID
                             </th>
-                            <th className="border px-4 py-2">
-                                Asset Component Name
-                            </th>
                             <th className="border px-4 py-2">Asset Type</th>
-                            <th className="border px-4 py-2">Products</th>
+                            <th className="border px-4 py-2">
+                                Asset Component
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -43,41 +42,11 @@ export default function AssetComponent() {
                                     <td className="border px-4 py-2">
                                         {assetComponent.ASSETCOMPNETID}
                                     </td>
+                                    <td className="border px-4 py-2 text-center">
+                                        {assetComponent.asset_type?.ASSETTYPE}
+                                    </td>
                                     <td className="border px-4 py-2">
                                         {assetComponent.ASSETCOMPONENTNAME}
-                                    </td>
-                                    <td className="border px-4 py-2 gap-2 flex justify-center">
-                                        {assetComponent.ASSETTYPEID}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {/* Display products and their AssetType */}
-                                        {assetComponent.products.length > 0 ? (
-                                            <ul>
-                                                {assetComponent.products.map(
-                                                    (product) => (
-                                                        <li
-                                                            key={
-                                                                product.PRODUCTID
-                                                            }
-                                                        >
-                                                            <strong>
-                                                                {
-                                                                    product.DESCRIPTION
-                                                                }
-                                                            </strong>{" "}
-                                                            --{" "}
-                                                            {
-                                                                product
-                                                                    .assetType
-                                                                    ?.ASSETTYPE
-                                                            }
-                                                        </li>
-                                                    )
-                                                )}
-                                            </ul>
-                                        ) : (
-                                            "No products available"
-                                        )}
                                     </td>
                                 </tr>
                             ))

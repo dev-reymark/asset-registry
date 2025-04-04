@@ -23,4 +23,9 @@ class AssetComponent extends Model
     {
         return $this->hasMany(Product::class, 'ASSETCOMPONENT', 'ASSETCOMPNETID');
     }
+
+    public function assetType()
+    {
+        return $this->belongsTo(AssetType::class, 'ASSETTYPEID', 'ASSETTYPEID');
+    }
 }

@@ -1,5 +1,14 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
+import {
+    Table,
+    TableHeader,
+    TableColumn,
+    TableBody,
+    TableRow,
+    TableCell,
+    Button,
+} from "@heroui/react";
 
 export default function Department() {
     const { departments, title, description } = usePage().props; // Get department data
@@ -11,53 +20,41 @@ export default function Department() {
         >
             <Head title="Departments" />
             <div className="p-6 bg-white shadow rounded-lg">
-                <h1 className="text-2xl font-bold">{title}</h1>
-                <p className="text-gray-600">{description}</p>
+                <Table
+                    aria-label="Departments table"
+                    isStriped
+                    topContent={
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="gap-y-2">
+                                <h1 className="text-2xl font-bold">{title}</h1>
+                                <p className="text-gray-600">{description}</p>
+                            </div>
 
-                <Link
-                    href={route("departments.create")}
-                    className="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                            <Button
+                                as={Link}
+                                href={route("employees.create")}
+                                color="primary"
+                            >
+                                Add Department
+                            </Button>
+                        </div>
+                    }
                 >
-                    + Add Department
-                </Link>
-
-                {/* Department Table */}
-                <table className="w-full border-collapse border border-gray-200">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">Department ID</th>
-                            <th className="border px-4 py-2">
-                                Department Name
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {departments.length > 0 ? (
-                            departments.map((department) => (
-                                <tr
-                                    key={department.DEPARTMETID}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="border px-4 py-2">
-                                        {department.DEPARTMETID}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {department.DEPARTMENTNAME}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="2"
-                                    className="border px-4 py-2 text-center text-gray-500"
-                                >
-                                    No departments found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                    <TableHeader>
+                        <TableColumn>DEPARTMENT ID</TableColumn>
+                        <TableColumn>DEPARTMENT NAME</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent={"No rows to display."}>
+                        {departments.map((department) => (
+                            <TableRow key={department.DEPARTMETID}>
+                                <TableCell>{department.DEPARTMETID}</TableCell>
+                                <TableCell>
+                                    {department.DEPARTMENTNAME}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
         </Authenticated>
     );

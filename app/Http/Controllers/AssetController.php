@@ -31,7 +31,7 @@ class AssetController extends Controller
      */
     public function index(): Response
     {
-        $assets = Asset::with('employee')->get();
+        $assets = Asset::with('employee')->active()->get();
 
         return Inertia::render('Assets/Assets', [
             'assets' => $assets,

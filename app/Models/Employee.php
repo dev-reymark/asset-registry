@@ -21,6 +21,7 @@ class Employee extends Model
         'DEPARTMENT',
         'LOCATION',
         'WORKSTATION',
+        'archived',
     ];
 
     // Relationship to Department
@@ -47,5 +48,15 @@ class Employee extends Model
     public function assets()
     {
         return $this->hasMany(Asset::class, 'EMPLOYEEID', 'EMPNO');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('archived', true);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('archived', false);
     }
 }

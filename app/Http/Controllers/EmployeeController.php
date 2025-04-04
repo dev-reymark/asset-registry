@@ -19,16 +19,45 @@ class EmployeeController extends Controller
      *
      * @return \Inertia\Response
      */
-    public function index(): Response
+    // public function index(): Response
+    // {
+    //     $employees = Employee::with(['department', 'location', 'workstation'])->active()->get();
+    //     $employeesCount = Employee::active()->count();
+
+    //     return Inertia::render('Employee/Index', [
+    //         'employees' => $employees,
+    //         'employeesCount' => $employeesCount,
+    //         'title' => 'Employees',
+    //         'description' => 'List of all employees',
+    //     ]);
+    // }
+
+    public function index(Request $request)
     {
-        $employees = Employee::with(['department', 'location', 'workstation'])->get();
-        $employeesCount = Employee::count();
+        $search = $request->input('search');
+        $sort = $request->input('sort');
+
+        $query = Employee::with(['department', 'location', 'workstation']);
+
+        if ($search) {
+            $query->where('EMPLOYEENAME', 'like', '%' . $search . '%');
+        }
+
+        if ($sort === 'name_asc') {
+            $query->orderBy('EMPLOYEENAME', 'asc');
+        } elseif ($sort === 'name_desc') {
+            $query->orderBy('EMPLOYEENAME', 'desc');
+        }
+
+        $employees = $query->get();
 
         return Inertia::render('Employee/Index', [
             'employees' => $employees,
-            'employeesCount' => $employeesCount,
-            'title' => 'Employees',
-            'description' => 'List of all employees',
+            'title' => 'Employees List',
+            'filters' => [
+                'search' => $search,
+                'sort' => $sort,
+            ],
         ]);
     }
 
@@ -111,7 +140,7 @@ class EmployeeController extends Controller
             // Log asset before deletion
             Log::info('Found associated asset, deleting asset:', ['asset_id' => $asset->ASSETSID]);
 
-            $asset->delete();  // Make sure this deletes the asset
+            $asset->delete();
             Log::info('Asset deleted for employee: ', ['EMPLOYEEID' => $employee->EMPNO]);
         } else {
             // Log if no asset was found
@@ -161,5 +190,68 @@ class EmployeeController extends Controller
         ]);
 
         return redirect()->route('employees.index')->with('success', 'Employee updated successfully!');
+    }
+
+    public function archive(Employee $employee)
+    {
+        $employee->update(['archived' => true]);
+
+        Log::info('Employee archived:', ['employee_id' => $employee->EMPNO]);
+
+        // Archive the associated asset (if exists)
+        $asset = Asset::where('EMPLOYEEID', $employee->EMPNO)->first();
+
+        if ($asset) {
+            // Log asset before archiving
+            Log::info('Found associated asset, archiving asset:', ['asset_id' => $asset->ASSETSID]);
+
+            // Archive the asset
+            $asset->update(['archived' => true]);
+
+            // Log after archiving the asset
+            Log::info('Asset archived for employee:', ['EMPLOYEEID' => $employee->EMPNO]);
+        } else {
+            // Log if no asset was found
+            Log::warning('No asset found for employee to archive:', ['employee_id' => $employee->EMPNO]);
+        }
+
+        return redirect()->route('employees.index')->with('success', 'Employee archived successfully!');
+    }
+
+    public function restore(Employee $employee)
+    {
+        $employee->update(['archived' => false]);
+        Log::info('Employee restored:', ['employee_id' => $employee->EMPNO]);
+
+        $asset = Asset::where('EMPLOYEEID', $employee->EMPNO)->first();
+
+        if ($asset) {
+            // Log asset before restoring
+            Log::info('Found associated asset, restoring asset:', ['asset_id' => $asset->ASSETSID]);
+
+            // Restore the asset
+            $asset->update(['archived' => false]);
+
+            // Log after restoring the asset
+            Log::info('Asset restored for employee:', ['EMPLOYEEID' => $employee->EMPNO]);
+        } else {
+            // Log if no asset was found
+            Log::warning('No asset found for employee to restore:', ['employee_id' => $employee->EMPNO]);
+        }
+
+        return redirect()->route('employees.index')->with('success', 'Employee restored successfully!');
+    }
+
+    public function archived(): Response
+    {
+        $employees = Employee::with(['department', 'location', 'workstation'])
+            ->archived()
+            ->get();
+
+        return Inertia::render('Employee/Archived', [
+            'employees' => $employees,
+            'title' => 'Archived Employees',
+            'description' => 'List of all archived employees',
+        ]);
     }
 }

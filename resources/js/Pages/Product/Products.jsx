@@ -3,6 +3,7 @@ import Authenticated from "../../Layouts/Authenticated";
 
 export default function Products() {
     const { products } = usePage().props; // Fetch products
+    console.log(products); // Log products to console for debugging
 
     return (
         <Authenticated

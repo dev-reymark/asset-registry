@@ -3,7 +3,7 @@ import "../css/app.css";
 
 import { createInertiaApp } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
-import { HeroUIProvider } from "@heroui/react";
+import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { Toaster } from "react-hot-toast";
 
 createInertiaApp({
@@ -15,6 +15,7 @@ createInertiaApp({
         createRoot(el).render(
             <HeroUIProvider>
                 <App {...props} />
+                <ToastProvider />
                 <Toaster position="top-right" />
             </HeroUIProvider>
         );

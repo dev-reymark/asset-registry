@@ -4,7 +4,7 @@ import { Button } from "@heroui/react";
 
 export default function Assets() {
     const { assets } = usePage().props; // Get assets data
-    // console.log(assets);
+    console.log(assets);
 
     return (
         <Authenticated>
