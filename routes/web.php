@@ -36,8 +36,9 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/{employee}/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
         Route::patch('/{employee}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
         Route::get('/archived', [EmployeeController::class, 'archived'])->name('employees.archived');
-        Route::post('/{employee}/create-user', [EmployeeController::class, 'createUser']);
-
+        Route::get('/{employee}/create-user', [EmployeeController::class, 'createUserForm'])->name('employees.createUserForm');
+        Route::post('/{employee}/create-user', [EmployeeController::class, 'createUser'])->name('employees.createUser');
+        Route::put('/{employee}/update-password', [EmployeeController::class, 'updatePassword'])->name('employees.updatePassword');
     });
 
     // Asset Routes

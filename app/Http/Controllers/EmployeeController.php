@@ -258,14 +258,28 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function createUserForm(Employee $employee)
+    {
+        $user = User::where('name', $employee->EMPLOYEENAME)->first(); // or use a more reliable link if available
+
+        return Inertia::render('Employee/CreateUser', [
+            'employee' => $employee,
+            'user' => $user,
+            'title' => 'Create User',
+            'description' => 'Create a user account for the employee.',
+        ]);
+    }
+
+
     public function createUser(Request $request, Employee $employee)
     {
+        // Validate the form input
         $validated = $request->validate([
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
         ]);
 
-        // Create the new user
+        // Create the new user associated with the employee
         $user = User::create([
             'name' => $employee->EMPLOYEENAME,
             'email' => $validated['email'],
@@ -273,13 +287,33 @@ class EmployeeController extends Controller
             'user_role' => 'employee',
         ]);
 
-        // Redirect or render the Inertia page with user and employee data
-        return Inertia::render('Employee/CreateUser', [
-            'employee' => $employee,
-            'user' => $user,
-            'title' => 'Create User',
-            'description' => 'User account created successfully for employee.',
+        // Log the user creation for debugging purposes (optional)
+        Log::info('User created for employee:', [
             'employee_id' => $employee->EMPNO,
+            'user_id' => $user->id,
+            'user_email' => $user->email,
         ]);
+
+        // Redirect to the employee's page or list with a success message
+        return redirect()->route('employees.index')->with('success', 'User account created successfully for employee.');
+    }
+
+    public function updateUserPassword(Request $request, Employee $employee)
+    {
+        $validated = $request->validate([
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $user = User::where('name', $employee->EMPLOYEENAME)->first(); // or link via foreign key if available
+
+        if (!$user) {
+            return redirect()->back()->withErrors(['user' => 'User not found for this employee.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return back()->with('success', 'Password updated successfully.');
     }
 }

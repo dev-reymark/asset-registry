@@ -142,7 +142,7 @@ export default function Employees() {
     return (
         <Authenticated>
             <Head title="Employees" />
-            <div className="p-6 bg-white shadow rounded-lg">
+            <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold mb-4">{title}</h2>
 
@@ -252,9 +252,14 @@ export default function Employees() {
                                         Archive
                                     </Button>
                                     <Button
+                                        as={Link}
                                         className="w-full"
                                         size="sm"
                                         color="primary"
+                                        href={route(
+                                            "employees.createUser",
+                                            employee.EMPNO
+                                        )}
                                     >
                                         Grant Access
                                     </Button>
