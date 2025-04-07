@@ -6,8 +6,10 @@ use App\Models\Asset;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Models\User;
 use App\Models\WorkStation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,7 +39,7 @@ class EmployeeController extends Controller
         $search = $request->input('search');
         $sort = $request->input('sort');
 
-        $query = Employee::with(['department', 'location', 'workstation']);
+        $query = Employee::active()->with(['department', 'location', 'workstation']);
 
         if ($search) {
             $query->where('EMPLOYEENAME', 'like', '%' . $search . '%');
@@ -50,6 +52,7 @@ class EmployeeController extends Controller
         }
 
         $employees = $query->get();
+        // $employees = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Employee/Index', [
             'employees' => $employees,
@@ -252,6 +255,31 @@ class EmployeeController extends Controller
             'employees' => $employees,
             'title' => 'Archived Employees',
             'description' => 'List of all archived employees',
+        ]);
+    }
+
+    public function createUser(Request $request, Employee $employee)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        // Create the new user
+        $user = User::create([
+            'name' => $employee->EMPLOYEENAME,
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'user_role' => 'employee',
+        ]);
+
+        // Redirect or render the Inertia page with user and employee data
+        return Inertia::render('Employee/CreateUser', [
+            'employee' => $employee,
+            'user' => $user,
+            'title' => 'Create User',
+            'description' => 'User account created successfully for employee.',
+            'employee_id' => $employee->EMPNO,
         ]);
     }
 }

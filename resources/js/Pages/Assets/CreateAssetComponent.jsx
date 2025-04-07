@@ -1,5 +1,8 @@
-import { Head, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
+import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
+import toast from "react-hot-toast";
+import { route } from "ziggy-js";
 
 export default function CreateAssetComponent({ assetTypes }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -7,13 +10,19 @@ export default function CreateAssetComponent({ assetTypes }) {
         ASSETTYPEID: "",
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        post(route("assetComponents.store"), {
-            onFinish: () => {
-                setData({ ASSETCOMPONENTNAME: "", ASSETTYPEID: "" });
-            },
-        });
+        try {
+            await post(route("assetComponents.store"), {
+                onFinish: () => {
+                    toast.success("Asset component created successfully");
+                    router.get(route("assetComponents.index"));
+                },
+            });
+        } catch (error) {
+            toast.error("Failed to create asset component");
+            console.error("Error creating asset component:", error);
+        }
     };
 
     const handleAssetTypeChange = (e) => {
@@ -31,84 +40,80 @@ export default function CreateAssetComponent({ assetTypes }) {
         });
     };
 
-
     return (
         <Authenticated>
             <Head title="Create Asset Component" />
-            <div className="p-6 bg-white shadow rounded-lg">
+            <div className="p-6">
+                <div className="my-6">
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        as={Link}
+                        href={route("assetComponents.index")}
+                    >
+                        ← Back
+                    </Button>
+                </div>
                 <h1 className="text-2xl font-bold mb-4">
                     Create Asset Component
                 </h1>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label
-                            htmlFor="ASSETTYPEID"
-                            className="block text-sm font-medium text-gray-700"
-                        >
-                            Asset Type
-                        </label>
-                        <select
-                            required
-                            id="ASSETTYPEID"
-                            name="ASSETTYPEID"
-                            value={data.ASSETTYPEID}
-                            onChange={handleAssetTypeChange}
-                            className="mt-1 p-2 block w-full border-gray-300 rounded-md"
-                        >
-                            <option value="">Select Asset Type</option>
-                            {assetTypes.map((type) => (
-                                <option
-                                    key={type.ASSETTYPEID}
-                                    value={type.ASSETTYPEID}
-                                >
-                                    {type.ASSETTYPE}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.ASSETTYPEID && (
-                            <div className="text-red-500 text-xs mt-1">
-                                {errors.ASSETTYPEID}
-                            </div>
-                        )}
-                    </div>
-                    <div className="mb-4">
-                        <label
-                            htmlFor="ASSETCOMPONENTNAME"
-                            className="block text-sm font-medium text-gray-700"
-                        >
-                            Asset Component Name
-                        </label>
-                        <input
-                            type="text"
-                            id="ASSETCOMPONENTNAME"
-                            name="ASSETCOMPONENTNAME"
-                            value={data.ASSETCOMPONENTNAME}
-                            onChange={(e) =>
-                                setData("ASSETCOMPONENTNAME", e.target.value)
-                            }
-                            className="mt-1 p-2 block w-full border-gray-300 rounded-md"
-                        />
+                <Form
+                    onSubmit={handleSubmit}
+                    className="w-full flex flex-col space-y-2"
+                    validationErrors={errors}
+                    onReset={() => setData({ ASSETCOMPONENTNAME: "" })}
+                >
+                    <Select
+                        label="Asset Type"
+                        isRequired
+                        id="ASSETTYPEID"
+                        name="ASSETTYPEID"
+                        value={data.ASSETTYPEID}
+                        onChange={handleAssetTypeChange}
+                    >
+                        <SelectItem value="">Select Asset Type</SelectItem>
+                        {assetTypes.map((type) => (
+                            <SelectItem
+                                key={type.ASSETTYPEID}
+                                value={type.ASSETTYPEID}
+                            >
+                                {type.ASSETTYPE}
+                            </SelectItem>
+                        ))}
+                    </Select>
 
-                        {errors.ASSETCOMPONENTNAME && (
-                            <div className="text-red-500 text-xs mt-1">
-                                {errors.ASSETCOMPONENTNAME}
-                            </div>
-                        )}
-                    </div>
+                    <Input
+                        isRequired
+                        label="Asset Component Name"
+                        id="ASSETCOMPONENTNAME"
+                        name="ASSETCOMPONENTNAME"
+                        value={data.ASSETCOMPONENTNAME}
+                        onChange={(e) =>
+                            setData("ASSETCOMPONENTNAME", e.target.value)
+                        }
+                    />
 
-                    <div className="mb-4">
-                        <button
+                    <div className="mb-4 flex gap-2">
+                        <Button
                             type="submit"
                             disabled={processing}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md"
+                            color="primary"
                         >
                             {processing
                                 ? "Creating..."
                                 : "Create Asset Component"}
-                        </button>
+                        </Button>
+                        <Button
+                            type="reset"
+                            isDisabled={processing}
+                            color="warning"
+                            variant="flat"
+                        >
+                            Reset
+                        </Button>
                     </div>
-                </form>
+                </Form>
             </div>
         </Authenticated>
     );

@@ -1,11 +1,51 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
-import { Button } from "@heroui/react";
+import {
+    Button,
+    Chip,
+    Tab,
+    Table,
+    TableBody,
+    TableCell,
+    TableColumn,
+    TableHeader,
+    TableRow,
+    Tabs,
+} from "@heroui/react";
 import toast from "react-hot-toast";
+import { route } from "ziggy-js";
 
 export default function AssetView() {
-    const { asset } = usePage().props; // Get asset
+    const { asset, archivedDetails } = usePage().props; // Get asset
     // console.log(asset);
+
+    const archiveAsset = (assetId, assetNo) => {
+        router.post(
+            route("assets.archive", { assetId, assetNo }),
+            {
+                _method: "PUT",
+            },
+            {
+                onSuccess: () => toast.success("Asset archived!"),
+                onError: () => toast.error("Failed to archive asset."),
+            }
+        );
+        router.reload();
+    };
+
+    const restoreAsset = (assetId, assetNo) => {
+        router.post(
+            route("assets.restore", { assetId, assetNo }),
+            {
+                _method: "PUT",
+            },
+            {
+                onSuccess: () => toast.success("Asset restored!"),
+                onError: () => toast.error("Failed to restore asset."),
+            }
+        );
+        router.reload();
+    };
 
     return (
         <Authenticated
@@ -13,14 +53,16 @@ export default function AssetView() {
             errors={usePage().props.errors}
         >
             <Head title={`Asset Details - ${asset.ASSETSID}`} />
-            <div className="p-6 bg-white shadow rounded-lg">
-                <div className="mt-6">
-                    <Link
+            <div className="p-6">
+                <div className="my-6">
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        as={Link}
                         href={route("assets.index")}
-                        className="text-blue-500 hover:underline"
                     >
                         ← Back to Assets
-                    </Link>
+                    </Button>
                 </div>
                 <h1 className="text-2xl font-bold mb-4">
                     General Asset Information
@@ -29,231 +71,206 @@ export default function AssetView() {
                 {/* General Asset Info */}
                 <div className="border p-4 rounded-lg mb-6">
                     <p>
-                        <strong>Asset ID:</strong> {asset?.ASSETSID}
+                        Asset ID: <strong>{asset?.ASSETSID}</strong>
                     </p>
                     <p>
-                        <strong>Employee ID:</strong>
-                        {asset?.EMPLOYEEID}
+                        Employee ID:{" "}
+                        <strong>{asset?.employee?.EMPLOYEEID ?? "--"}</strong>
                     </p>
                     <p>
-                        <strong>Employee Name:</strong>
-                        {asset.EMPLOYEENAME}
+                        Employee Name:{" "}
+                        <strong>{asset?.employee?.EMPLOYEENAME}</strong>
                     </p>
                 </div>
 
-                {/* Asset Details Table */}
-                <h2 className="text-xl font-bold mb-2">Asset Details</h2>
-                <Button
-                    as={Link}
-                    color="primary"
-                    href={route("assets.create", { id: asset.ASSETSID })}
-                >
-                    Add New Asset
-                </Button>
-                <table className="w-full border-collapse border border-gray-200 mb-6">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">Action</th>
-                            <th className="border px-4 py-2">Asset No</th>
-                            <th className="border px-4 py-2">Asset ID</th>
-                            <th className="border px-4 py-2">Product ID</th>
-                            <th className="border px-4 py-2">Description</th>
-                            <th className="border px-4 py-2">Model</th>
-                            <th className="border px-4 py-2">Serial No</th>
-                            <th className="border px-4 py-2">Serial Type</th>
-                            <th className="border px-4 py-2">Issued To</th>
-                            <th className="border px-4 py-2">Date Issued</th>
-                            <th className="border px-4 py-2">Status</th>
-                            <th className="border px-4 py-2">Condition</th>
-                            <th className="border px-4 py-2">Asset From</th>
-                            <th className="border px-4 py-2">Type/Size</th>
-                            <th className="border px-4 py-2">Workstation</th>
-                            <th className="border px-4 py-2">
-                                System Asset ID
-                            </th>
-                            <th className="border px-4 py-2">
-                                System Component ID
-                            </th>
-                            <th className="border px-4 py-2">
-                                With Components
-                            </th>
-                            <th className="border px-4 py-2">Component</th>
-                            <th className="border px-4 py-2">No Print</th>
-                            <th className="border px-4 py-2">Image Path</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {asset?.asset_details?.length > 0 ? (
-                            asset.asset_details.map((detail) => (
-                                <tr
-                                    key={detail.ASSETNO}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="border px-4 py-2 gap-2">
-                                        <Button
-                                            as={Link}
-                                            href={route("assets.edit", {
-                                                assetId: detail.ASSETID,
-                                                assetNo: detail.ASSETNO,
-                                            })}
-                                            color="primary"
-                                            size="sm"
-                                        >
-                                            Update
-                                        </Button>
-                                        <Button
-                                            as="button"
-                                            onPress={() => {
-                                                axios
-                                                    .post(
-                                                        route(
-                                                            "assets.destroy",
-                                                            {
-                                                                assetId:
-                                                                    detail.ASSETID,
-                                                                assetNo:
-                                                                    detail.ASSETNO,
-                                                            }
-                                                        ),
-                                                        {
-                                                            _method: "DELETE", // Spoofing DELETE method
-                                                        }
+                <Tabs aria-label="Assets Tabs" color="secondary">
+                    <Tab key="employee-assets" title="Employee Assets">
+                        <Table
+                            aria-label="Asset Details table"
+                            isStriped
+                            topContent={
+                                <div className="flex justify-end items-center">
+                                    <Button
+                                        color="primary"
+                                        as={Link}
+                                        href={route("assets.create", {
+                                            id: asset.ASSETSID,
+                                        })}
+                                    >
+                                        Add New Asset
+                                    </Button>
+                                </div>
+                            }
+                        >
+                            <TableHeader>
+                                <TableColumn>Action</TableColumn>
+                                <TableColumn>System Asset ID</TableColumn>
+                                <TableColumn>Description</TableColumn>
+                                <TableColumn>Model</TableColumn>
+                                <TableColumn>Serial No</TableColumn>
+                                <TableColumn>Serial Type</TableColumn>
+                                <TableColumn>Issued To</TableColumn>
+                                <TableColumn>Date Issued</TableColumn>
+                                <TableColumn>Status</TableColumn>
+                                <TableColumn>Condition</TableColumn>
+                                <TableColumn>Asset From</TableColumn>
+                                <TableColumn>Type/Size</TableColumn>
+                                <TableColumn>Workstation</TableColumn>
+                                <TableColumn>With Components</TableColumn>
+                                <TableColumn>Components</TableColumn>
+                            </TableHeader>
+                            <TableBody emptyContent={"No rows to display."}>
+                                {asset.asset_details.map((detail) => (
+                                    <TableRow key={detail.ASSETNO}>
+                                        <TableCell className="flex flex-col gap-1">
+                                            <Button
+                                                as={Link}
+                                                href={route("assets.edit", {
+                                                    assetId: detail.ASSETID,
+                                                    assetNo: detail.ASSETNO,
+                                                })}
+                                                color="success"
+                                                size="sm"
+                                            >
+                                                Update
+                                            </Button>
+                                            <Button
+                                                color="warning"
+                                                size="sm"
+                                                onPress={() =>
+                                                    archiveAsset(
+                                                        detail.ASSETID,
+                                                        detail.ASSETNO
                                                     )
-                                                    .then((response) => {
-                                                        toast.success(
-                                                            "Asset deleted successfully"
-                                                        );
-                                                        router.reload();
-                                                    })
-                                                    .catch((error) => {
-                                                        toast.error(
-                                                            "Failed to delete asset"
-                                                        );
-                                                        console.error(
-                                                            error.response
-                                                                ?.data ||
-                                                                error.message
-                                                        );
-                                                    });
-                                            }}
-                                            color="danger"
-                                            size="sm"
-                                        >
-                                            Delete
-                                        </Button>
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.ASSETNO || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.ASSETID || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.PRODUCTID || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.DESCRIPTION?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.MODEL?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.SERIALNO?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.SERIALTYPE || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.ISSUEDTO?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.DATEISSUUED?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.STATUS?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.CONDITIONS?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.ASSETFROM?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.TYPESIZE?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.WORKSTAION || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.SYSTEMASSETID?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.SYSTEMCOMPONENTID?.trim() ||
-                                            "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.WITHCOMPONENTS || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.COMPONENT?.trim() || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.NOPRINT || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {detail.IMAGEPATH || "--"}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="20"
-                                    className="border px-4 py-2 text-center text-gray-500"
-                                >
-                                    No asset details found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                                                }
+                                            >
+                                                Archive
+                                            </Button>
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.SYSTEMASSETID}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.DESCRIPTION}
+                                        </TableCell>
+                                        <TableCell>{detail.MODEL}</TableCell>
+                                        <TableCell>{detail.SERIALNO}</TableCell>
+                                        <TableCell>
+                                            {detail.SERIALTYPE}
+                                        </TableCell>
+                                        <TableCell>{detail.ISSUEDTO}</TableCell>
+                                        <TableCell>
+                                            {detail.DATEISSUUED
+                                                ? new Date(
+                                                      detail.DATEISSUUED
+                                                  ).toLocaleDateString()
+                                                : "--"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip>{detail.STATUS}</Chip>
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.CONDITIONS}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.ASSETFROM}
+                                        </TableCell>
+                                        <TableCell>{detail.TYPESIZE}</TableCell>
+                                        <TableCell>
+                                            {detail.WORKSTATION}
+                                        </TableCell>
 
-                {/* Asset Components Table */}
-                <h2 className="text-xl font-bold mb-2">Asset Components</h2>
-                <table className="w-full border-collapse border border-gray-200 mb-6">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">Component ID</th>
-                            <th className="border px-4 py-2">Component Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {asset?.assetComponents?.length > 0 ? (
-                            asset.assetComponents.map((component) => (
-                                <tr
-                                    key={component.ASSETCOMPNETID}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="border px-4 py-2">
-                                        {component.ASSETCOMPNETID || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {component.ASSETCOMPONENTNAME || "--"}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="2"
-                                    className="border px-4 py-2 text-center text-gray-500"
-                                >
-                                    No components found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                                        <TableCell>
+                                            {detail.WITHCOMPONENTS}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.COMPONENTS}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Tab>
+                    <Tab key="asset-history" title="Asset History">
+                        <Table aria-label="Archived Assets table">
+                            <TableHeader>
+                                <TableColumn>Action</TableColumn>
+                                <TableColumn>System Asset ID</TableColumn>
+                                <TableColumn>Description</TableColumn>
+                                <TableColumn>Model</TableColumn>
+                                <TableColumn>Serial No</TableColumn>
+                                <TableColumn>Serial Type</TableColumn>
+                                <TableColumn>Issued To</TableColumn>
+                                <TableColumn>Date Issued</TableColumn>
+                                <TableColumn>Status</TableColumn>
+                                <TableColumn>Condition</TableColumn>
+                                <TableColumn>Asset From</TableColumn>
+                                <TableColumn>Type/Size</TableColumn>
+                                <TableColumn>Workstation</TableColumn>
+                                <TableColumn>With Components</TableColumn>
+                                <TableColumn>Components</TableColumn>
+                            </TableHeader>
+                            <TableBody emptyContent={"No rows to display."}>
+                                {archivedDetails.map((detail) => (
+                                    <TableRow key={detail.ASSETNO}>
+                                        <TableCell className="flex flex-col gap-1">
+                                            <Button
+                                                color="success"
+                                                size="sm"
+                                                onPress={() =>
+                                                    restoreAsset(
+                                                        detail.ASSETID,
+                                                        detail.ASSETNO
+                                                    )
+                                                }
+                                            >
+                                                Restore
+                                            </Button>
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.SYSTEMASSETID}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.DESCRIPTION}
+                                        </TableCell>
+                                        <TableCell>{detail.MODEL}</TableCell>
+                                        <TableCell>{detail.SERIALNO}</TableCell>
+                                        <TableCell>
+                                            {detail.SERIALTYPE}
+                                        </TableCell>
+                                        <TableCell>{detail.ISSUEDTO}</TableCell>
+                                        <TableCell>
+                                            {detail.DATEISSUUED
+                                                ? new Date(
+                                                      detail.DATEISSUUED
+                                                  ).toLocaleDateString()
+                                                : "--"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip>{detail.STATUS}</Chip>
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.CONDITIONS}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.ASSETFROM}
+                                        </TableCell>
+                                        <TableCell>{detail.TYPESIZE}</TableCell>
+                                        <TableCell>
+                                            {detail.WORKSTATION}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.WITHCOMPONENTS}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.COMPONENTS}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Tab>
+                </Tabs>
             </div>
         </Authenticated>
     );

@@ -1,7 +1,8 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Button, Input, Select, SelectItem } from "@heroui/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
 import Authenticated from "../../Layouts/Authenticated";
 import toast from "react-hot-toast";
+import { route } from "ziggy-js";
 
 export default function EditEmployee() {
     const { employee, departments, locations, workstations } = usePage().props;
@@ -43,111 +44,112 @@ export default function EditEmployee() {
     return (
         <Authenticated>
             <Head title="Edit Employee" />
-            <div className="p-6 bg-white shadow rounded-lg">
-                <h1 className="text-2xl font-bold mb-4">Edit Employee</h1>
-                <form onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        {/* <Input
+            <div className="p-6">
+                <div className="my-6">
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        as={Link}
+                        href={route("employees.index")}
+                    >
+                        ← Back to Employees
+                    </Button>
+                </div>
+                <h1 className="text-3xl font-bold mb-4">Edit Employee</h1>
+                <Form
+                    onSubmit={handleSubmit}
+                    className="w-full flex flex-col gap-4"
+                >
+                    {/* <Input
                             label="Employee ID"
                             value={data.EMPNO}
                             disabled
                         /> */}
-                        <Input
-                            isReadOnly
-                            label="Employee ID"
-                            value={data.EMPLOYEEID}
-                            onChange={(e) =>
-                                setData("EMPLOYEEID", e.target.value)
-                            }
-                            error={errors.EMPLOYEEID}
-                        />
-                        <Input
-                            isReadOnly
-                            label="Employee Name"
-                            value={data.EMPLOYEENAME}
-                            onChange={(e) =>
-                                setData("EMPLOYEENAME", e.target.value)
-                            }
-                            error={errors.EMPLOYEENAME}
-                        />
+                    <Input
+                        isRequired
+                        label="Employee ID"
+                        value={data.EMPLOYEEID}
+                        onChange={(e) => setData("EMPLOYEEID", e.target.value)}
+                    />
+                    <Input
+                        isRequired
+                        label="Employee Name"
+                        value={data.EMPLOYEENAME}
+                        onChange={(e) =>
+                            setData("EMPLOYEENAME", e.target.value)
+                        }
+                    />
 
-                        <Select
-                            className="max-w-xs"
-                            label="Department"
-                            value={data.DEPARTMENT}
-                            onChange={(e) =>
-                                setData("DEPARTMENT", e.target.value)
-                            }
-                            error={errors.DEPARTMENT}
-                            selectedKeys={data.DEPARTMENT}
-                        >
-                            {departments.map((department) => (
-                                <SelectItem
-                                    key={department.DEPARTMETID}
-                                    value={department.DEPARTMETID}
-                                >
-                                    {department.DEPARTMENTNAME}
-                                </SelectItem>
-                            ))}
-                        </Select>
+                    <Select
+                        isRequired
+                        label="Department"
+                        value={data.DEPARTMENT}
+                        onChange={(e) => setData("DEPARTMENT", e.target.value)}
+                        selectedKeys={data.DEPARTMENT}
+                    >
+                        {departments.map((department) => (
+                            <SelectItem
+                                key={department.DEPARTMETID}
+                                value={department.DEPARTMETID}
+                            >
+                                {department.DEPARTMENTNAME}
+                            </SelectItem>
+                        ))}
+                    </Select>
 
-                        <Select
-                            className="max-w-xs"
-                            label="Location"
-                            value={data.LOCATION}
-                            onChange={(e) =>
-                                setData("LOCATION", e.target.value)
-                            }
-                            error={errors.LOCATION}
-                            selectedKeys={data.LOCATION}
-                        >
-                            {locations.map((location) => (
-                                <SelectItem
-                                    key={location.LOCATIONID}
-                                    value={location.LOCATIONID}
-                                >
-                                    {location.LOCATIONNAME}
-                                </SelectItem>
-                            ))}
-                        </Select>
+                    <Select
+                        isRequired
+                        label="Location"
+                        value={data.LOCATION}
+                        onChange={(e) => setData("LOCATION", e.target.value)}
+                        selectedKeys={data.LOCATION}
+                    >
+                        {locations.map((location) => (
+                            <SelectItem
+                                key={location.LOCATIONID}
+                                value={location.LOCATIONID}
+                            >
+                                {location.LOCATIONNAME}
+                            </SelectItem>
+                        ))}
+                    </Select>
 
-                        <Select
-                            className="max-w-xs"
-                            label="Workstation"
-                            value={data.WORKSTATION}
-                            onChange={(e) =>
-                                setData("WORKSTATION", e.target.value)
-                            }
-                            error={errors.WORKSTATION}
-                            selectedKeys={data.WORKSTATION}
-                        >
-                            {workstations.map((workstation) => (
-                                <SelectItem
-                                    key={workstation.WORKSTATIONID}
-                                    value={workstation.WORKSTATIONID}
-                                >
-                                    {workstation.WORKSTATION}
-                                </SelectItem>
-                            ))}
-                        </Select>
+                    <Select
+                        isRequired
+                        label="Workstation"
+                        value={data.WORKSTATION}
+                        onChange={(e) => setData("WORKSTATION", e.target.value)}
+                        selectedKeys={data.WORKSTATION}
+                    >
+                        {workstations.map((workstation) => (
+                            <SelectItem
+                                key={workstation.WORKSTATIONID}
+                                value={workstation.WORKSTATIONID}
+                            >
+                                {workstation.WORKSTATION}
+                            </SelectItem>
+                        ))}
+                    </Select>
 
+                    <div className="flex gap-2 mt-4">
                         <Button
                             type="submit"
                             color="primary"
                             isDisabled={processing}
                         >
-                            Update
+                            {processing ? "Updating..." : "Update"}
                         </Button>
                         <Button
                             type="button"
                             color="warning"
+                            variant="flat"
                             onPress={() => window.history.back()}
                             isDisabled={processing}
                         >
                             Cancel
                         </Button>
                     </div>
-                </form>
+                </Form>
             </div>
         </Authenticated>
     );

@@ -19,7 +19,7 @@ export default function Department() {
             errors={usePage().props.errors}
         >
             <Head title="Departments" />
-            <div className="p-6 bg-white shadow rounded-lg">
+            <div className="p-6">
                 <Table
                     aria-label="Departments table"
                     isStriped
@@ -32,7 +32,7 @@ export default function Department() {
 
                             <Button
                                 as={Link}
-                                href={route("employees.create")}
+                                href={route("departments.create")}
                                 color="primary"
                             >
                                 Add Department

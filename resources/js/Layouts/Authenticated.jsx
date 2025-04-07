@@ -16,12 +16,7 @@ import { route } from "ziggy-js";
 import { BiSolidComponent } from "react-icons/bi";
 
 export default function Authenticated({ children }) {
-    const { url, props } = usePage();
-    // console.log(url);
-    // console.log(props);
-    const user = props.auth?.user;
-    console.log(user);
-
+    const { url } = usePage();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const handleLogout = () => {
@@ -145,34 +140,6 @@ export default function Authenticated({ children }) {
                         <FaDesktop className="w-5 h-5" />
                         <span className="ml-4">Workstations</span>
                     </Link>
-
-                    {user?.user_role === "admin" && (
-                        <>
-                            <Link
-                                className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                                    url.startsWith("/departments")
-                                        ? "bg-indigo-600"
-                                        : "hover:bg-indigo-600"
-                                }`}
-                                href="/departments"
-                            >
-                                <MdCorporateFare className="w-5 h-5" />
-                                <span className="ml-4">Department</span>
-                            </Link>
-
-                            <Link
-                                className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                                    route().current("components.index")
-                                        ? "bg-indigo-600"
-                                        : "hover:bg-indigo-600"
-                                }`}
-                                href={route("components.index")}
-                            >
-                                <BiSolidComponent className="w-5 h-5" />
-                                <span className="ml-4">Asset Component</span>
-                            </Link>
-                        </>
-                    )}
                 </nav>
                 <div className="p-4">
                     <Button

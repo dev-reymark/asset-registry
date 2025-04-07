@@ -59,4 +59,9 @@ class Employee extends Model
     {
         return $query->where('archived', false);
     }
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'EMPLOYEEID', 'EMPNO');
+    }
 }

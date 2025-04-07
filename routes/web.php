@@ -36,8 +36,9 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/{employee}/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
         Route::patch('/{employee}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
         Route::get('/archived', [EmployeeController::class, 'archived'])->name('employees.archived');
-    });
+        Route::post('/{employee}/create-user', [EmployeeController::class, 'createUser']);
 
+    });
 
     // Asset Routes
     Route::prefix('assets')->group(function () {
@@ -50,6 +51,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{assetId}/{assetNo}', [AssetController::class, 'destroy'])->name('assets.destroy');
         Route::get('/{assetId}/{assetNo}/edit', [AssetController::class, 'edit'])->name('assets.edit');
         Route::put('/{assetId}/{assetNo}', [AssetController::class, 'update'])->name('assets.update');
+        Route::put('/{assetId}/{assetNo}/archive', [AssetController::class, 'archive'])->name('assets.archive');
+        Route::put('/{assetId}/{assetNo}/restore', [AssetController::class, 'restore'])->name('assets.restore');
     });
 
     Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index');

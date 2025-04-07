@@ -35,6 +35,7 @@ class AssetDetail extends Model
         'WITHCOMPONENTS',
         'SYSTEMASSETID',
         'SYSTEMCOMPONENTID',
+        'archived',
     ];
 
     /**
@@ -48,5 +49,15 @@ class AssetDetail extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'PRODUCTID', 'PRODUCTID');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('archived', true);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('archived', false);
     }
 }

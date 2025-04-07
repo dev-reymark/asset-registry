@@ -1,71 +1,99 @@
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
+import {
+    Button,
+    Input,
+    Table,
+    TableBody,
+    TableCell,
+    TableColumn,
+    TableHeader,
+    TableRow,
+} from "@heroui/react";
+import { CiSearch } from "react-icons/ci";
+import { useDebounce } from "../../hooks/useDebounce";
+import { useState } from "react";
+import { route } from "ziggy-js";
 
 export default function Products() {
-    const { products } = usePage().props; // Fetch products
-    console.log(products); // Log products to console for debugging
+    const { products, filters } = usePage().props; // get products
+    // console.log(products); // Log products to console for
+
+    const [search, setSearch] = useState(filters.search || "");
+    const [sort, setSort] = useState(filters.sort || "");
+
+    const handleSearch = (value) => {
+        router.get(
+            route("products.index"),
+            { search: value, sort }, // Send search query
+            { preserveState: true, replace: true }
+        );
+    };
+
+    const debouncedSearch = useDebounce(handleSearch, 300);
+
+    const onSearchChange = (e) => {
+        const value = e.target.value;
+        setSearch(value);
+        debouncedSearch(value); // Apply debouncing for performance
+    };
+
+    const onClear = () => {
+        setSearch("");
+        router.get(route("products.index"), { search: "", sort });
+    };
 
     return (
-        <Authenticated
-            auth={usePage().props.auth}
-            errors={usePage().props.errors}
-        >
+        <Authenticated>
             <Head title="Products" />
-            <div className="p-6 bg-white shadow rounded-lg">
+            <div className="p-6">
                 <h1 className="text-2xl font-bold mb-4">Products</h1>
-                <Link
-                    href={route("products.create")}
-                    className="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                <Table
+                    isStriped
+                    className="mt-4"
+                    topContent={
+                        <div className="flex justify-between items-center mb-4">
+                            <Button
+                                as={Link}
+                                color="primary"
+                                href={route("products.create")}
+                            >
+                                Add Product
+                            </Button>
+                            <Input
+                                isClearable
+                                className="w-full sm:max-w-[44%]"
+                                placeholder="Search by description..."
+                                startContent={<CiSearch className="size-5" />}
+                                value={search}
+                                onClear={onClear}
+                                onChange={onSearchChange}
+                            />
+                        </div>
+                    }
                 >
-                    + Add Product
-                </Link>
-
-                {/* Products Table */}
-                <table className="w-full border-collapse border border-gray-200">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">Product ID</th>
-                            <th className="border px-4 py-2">Description</th>
-                            <th className="border px-4 py-2">Asset Type</th>
-                            <th className="border px-4 py-2">
-                                Asset Component
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products.length > 0 ? (
-                            products.map((product) => (
-                                <tr
-                                    key={product.PRODUCTID}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="border px-4 py-2">
-                                        {product.PRODUCTID}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {product.DESCRIPTION}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {product.asset_type?.ASSETTYPE || "--"}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {product.asset_component
-                                            ?.ASSETCOMPONENTNAME || "--"}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="4"
-                                    className="border px-4 py-2 text-center text-gray-500"
-                                >
-                                    No products found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                    <TableHeader>
+                        <TableColumn>PRODUCT ID</TableColumn>
+                        <TableColumn>DESCRIPTION</TableColumn>
+                        <TableColumn>ASSET TYPE</TableColumn>
+                        <TableColumn>ASSET COMPONENT</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent={"No rows to display."}>
+                        {products.map((product) => (
+                            <TableRow key={product.PRODUCTID}>
+                                <TableCell>{product.PRODUCTID}</TableCell>
+                                <TableCell>{product.DESCRIPTION}</TableCell>
+                                <TableCell>
+                                    {product.asset_type?.ASSETTYPE || "--"}
+                                </TableCell>
+                                <TableCell>
+                                    {product.asset_component
+                                        ?.ASSETCOMPONENTNAME || "--"}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
         </Authenticated>
     );

@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { CiSearch } from "react-icons/ci";
 
 export default function ArchivedEmployees({ employees }) {
+    console.log("Archived Employees:", employees);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
@@ -136,11 +137,18 @@ export default function ArchivedEmployees({ employees }) {
                                 <TableCell>
                                     {employee.workstation?.WORKSTATION || "--"}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="flex gap-2">
+                                    <Button
+                                        color="primary"
+                                        size="sm"
+                                        as={Link}
+                                        href={`/assets/${employee.EMPNO}`}
+                                    >
+                                        View Assets
+                                    </Button>
                                     <Button
                                         color="success"
                                         size="sm"
-                                        variant="flat"
                                         onPress={() =>
                                             restoreEmployee(employee.EMPNO)
                                         }

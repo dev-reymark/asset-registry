@@ -1,67 +1,60 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
+import {
+    Button,
+    Table,
+    TableBody,
+    TableCell,
+    TableColumn,
+    TableHeader,
+    TableRow,
+} from "@heroui/react";
 
 export default function Locations() {
     const { locations } = usePage().props; // Get location data
 
     return (
-        <Authenticated
-            auth={usePage().props.auth}
-            errors={usePage().props.errors}
-        >
-            <Head title="Locations" />
-            <div className="p-6 bg-white shadow rounded-lg">
-                <h1 className="text-2xl font-bold mb-4">Locations</h1>
+        <Authenticated>
+            <Head title="Asset Locations" />
+            <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Asset Locations</h1>
 
-                <Link
-                    href={route("locations.create")}
-                    className="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                >
-                    + Add Location
-                </Link>
                 {/* Location Table */}
-                <table className="w-full border-collapse border border-gray-200">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-4 py-2">Location ID</th>
-                            <th className="border px-4 py-2">Location Name</th>
-                            <th className="border px-4 py-2">
-                                Department Name
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {locations.length > 0 ? (
-                            locations.map((location) => (
-                                <tr
-                                    key={location.LOCATIONID}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="border px-4 py-2">
-                                        {location.LOCATIONID}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {location.LOCATIONNAME}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {location.department
-                                            ? location.department.DEPARTMENTNAME
-                                            : "--"}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="3"
-                                    className="border px-4 py-2 text-center text-gray-500"
-                                >
-                                    No locations found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                <Table
+                isStriped
+                    aria-label="Locations table"
+                    className="mt-4"
+                    topContent={
+                        <div className="flex justify-start items-center mb-4">
+                            <Button
+                                as={Link}
+                                color="primary"
+                                href={route("locations.create")}
+                            >
+                                Add Location
+                            </Button>
+                        </div>
+                    }
+                >
+                    <TableHeader>
+                        <TableColumn>LOCATION ID</TableColumn>
+                        <TableColumn>LOCATION NAME</TableColumn>
+                        <TableColumn>DEPARTMENT</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent={"No rows to display."}>
+                        {locations.map((location) => (
+                            <TableRow key={location.LOCATIONID}>
+                                <TableCell>{location.LOCATIONID}</TableCell>
+                                <TableCell>{location.LOCATIONNAME}</TableCell>
+                                <TableCell>
+                                    {location.department
+                                        ? location.department.DEPARTMENTNAME
+                                        : "--"}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
         </Authenticated>
     );

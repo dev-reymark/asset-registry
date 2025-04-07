@@ -1,5 +1,7 @@
-import { useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
+import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
+import toast from "react-hot-toast";
 
 export default function AddProduct({
     assetTypes,
@@ -16,98 +18,88 @@ export default function AddProduct({
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route("products.store"));
+        toast.success("Product added successfully");
     };
 
     return (
         <Authenticated>
-            <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
-                <h2 className="text-xl font-bold mb-4">{title}</h2>
+            <Head title="Add Product" />
+            <div className="p-6">
+                <h2 className="text-xl font-bold">{title}</h2>
                 <p className="mb-4">{description}</p>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700">
-                            Product Description
-                        </label>
-                        <input
-                            type="text"
-                            className="w-full p-2 border border-gray-300 rounded"
-                            value={data.DESCRIPTION}
-                            onChange={(e) =>
-                                setData("DESCRIPTION", e.target.value)
-                            }
-                        />
-                        {errors.DESCRIPTION && (
-                            <p className="text-red-500 text-sm">
-                                {errors.DESCRIPTION}
-                            </p>
-                        )}
-                    </div>
+                <Form
+                    onSubmit={handleSubmit}
+                    className="w-full flex flex-col gap-2"
+                    validationErrors={errors}
+                    onReset={() => {
+                        setData({
+                            DESCRIPTION: "",
+                            ASSETTYPE: "",
+                            ASSETCOMPONENT: "",
+                        });
+                    }}
+                >
+                    <Input
+                        label="Product Description"
+                        isRequired
+                        value={data.DESCRIPTION}
+                        onChange={(e) => setData("DESCRIPTION", e.target.value)}
+                    />
 
-                    <div className="mb-4">
-                        <label className="block text-gray-700">
-                            Asset Type
-                        </label>
-                        <select
-                            className="w-full p-2 border border-gray-300 rounded"
-                            value={data.ASSETTYPE}
-                            onChange={(e) =>
-                                setData("ASSETTYPE", e.target.value)
-                            }
-                        >
-                            <option value="">Select Asset Type</option>
-                            {assetTypes.map((type) => (
-                                <option
-                                    key={type.ASSETTYPEID}
-                                    value={type.ASSETTYPEID}
-                                >
-                                    {type.ASSETTYPE}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.ASSETTYPE && (
-                            <p className="text-red-500 text-sm">
-                                {errors.ASSETTYPE}
-                            </p>
-                        )}
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="block text-gray-700">
-                            Asset Component
-                        </label>
-                        <select
-                            className="w-full p-2 border border-gray-300 rounded"
-                            value={data.ASSETCOMPONENT}
-                            onChange={(e) =>
-                                setData("ASSETCOMPONENT", e.target.value)
-                            }
-                        >
-                            <option value="">Select Asset Component</option>
-                            {assetComponents.map((component) => (
-                                <option
-                                    key={component.ASSETCOMPNETID}
-                                    value={component.ASSETCOMPNETID}
-                                >
-                                    {component.ASSETCOMPONENTNAME}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.ASSETCOMPONENT && (
-                            <p className="text-red-500 text-sm">
-                                {errors.ASSETCOMPONENT}
-                            </p>
-                        )}
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        disabled={processing}
+                    <Select
+                        isRequired
+                        label="Asset Type"
+                        value={data.ASSETTYPE}
+                        onChange={(e) => setData("ASSETTYPE", e.target.value)}
                     >
-                        {processing ? "Saving..." : "Add Product"}
-                    </button>
-                </form>
+                        <SelectItem value="" disabled>
+                            Select Asset Type
+                        </SelectItem>
+                        {assetTypes.map((type) => (
+                            <SelectItem
+                                key={type.ASSETTYPEID}
+                                value={type.ASSETTYPEID}
+                            >
+                                {type.ASSETTYPE}
+                            </SelectItem>
+                        ))}
+                    </Select>
+
+                    <Select
+                        isRequired
+                        label="Asset Component"
+                        value={data.ASSETCOMPONENT}
+                        onChange={(e) =>
+                            setData("ASSETCOMPONENT", e.target.value)
+                        }
+                    >
+                        <SelectItem value="" disabled>
+                            Select Asset Component
+                        </SelectItem>
+                        {assetComponents.map((component) => (
+                            <SelectItem
+                                key={component.ASSETCOMPNETID}
+                                value={component.ASSETCOMPNETID}
+                            >
+                                {component.ASSETCOMPONENTNAME}
+                            </SelectItem>
+                        ))}
+                    </Select>
+
+                    <div className="flex gap-2 mt-4">
+                        <Button
+                            type="submit"
+                            color="primary"
+                            isDisabled={processing}
+                        >
+                            {processing ? "Saving..." : "Add Product"}
+                        </Button>
+                        <Button type="reset" color="warning" variant="flat">
+                            Reset
+                        </Button>
+                    </div>
+                </Form>
             </div>
         </Authenticated>
     );

@@ -48,10 +48,21 @@ class AssetController extends Controller
      */
     public function show($id): Response
     {
-        $asset = Asset::with(['employee', 'assetDetails', 'assetType', 'assetComponents'])->findOrFail($id);
+        $asset = Asset::with(['employee', 'assetType', 'assetComponents'])->findOrFail($id);
+
+        $asset->load([
+            'assetDetails' => function ($q) {
+                $q->where('archived', false);
+            }
+        ]);
+
+        $archivedDetails = $asset->assetDetails()
+            ->where('archived', true)
+            ->get();
 
         return Inertia::render('Assets/AssetView', [
             'asset' => $asset,
+            'archivedDetails' => $archivedDetails,
             'title' => 'Asset Details',
             'description' => 'Detailed view of asset',
         ]);
@@ -107,7 +118,12 @@ class AssetController extends Controller
                 'DESCRIPTION' => $request->DESCRIPTION,
                 'MODEL' => $request->MODEL,
                 'SERIALNO' => $request->SERIALNO,
+                'ISSUEDTO' => $request->ISSUEDTO,
+                'DATEISSUUED' => $request->DATEISSUUED,
+                'SERIALTYPE' => $request->SERIALTYPE,
                 'STATUS' => $request->STATUS,
+                'ASSETFROM' => $request->ASSETFROM,
+                'CONDITIONS' => $request->CONDITIONS,
                 'SYSTEMASSETID' => $request->SYSTEMASSETID,
             ]);
         } catch (\Exception $e) {
@@ -115,7 +131,7 @@ class AssetController extends Controller
             return redirect()->back()->with('error', 'There was an error saving the asset.');
         }
 
-        return redirect(route('assets.index'))->with('success', 'Asset added successfully.');
+        return redirect(route('assets.show', ['id' => $request->ASSETSID]))->with('success', 'Asset added successfully.');
     }
 
     /**
@@ -321,5 +337,27 @@ class AssetController extends Controller
         Excel::import(new AssetsImport, $request->file('file'));
 
         return back()->with('success', 'Assets imported successfully.');
+    }
+
+    public function archive($assetId, $assetNo)
+    {
+        $assetDetail = AssetDetail::where('ASSETID', $assetId)
+            ->where('ASSETNO', $assetNo)
+            ->firstOrFail();
+
+        $assetDetail->update(['archived' => true]);
+
+        return redirect()->back()->with('success', 'Asset archived successfully.');
+    }
+
+    public function restore($assetId, $assetNo)
+    {
+        $assetDetail = AssetDetail::where('ASSETID', $assetId)
+            ->where('ASSETNO', $assetNo)
+            ->firstOrFail();
+
+        $assetDetail->update(['archived' => false]);
+
+        return redirect()->back()->with('success', 'Asset restored successfully.');
     }
 }

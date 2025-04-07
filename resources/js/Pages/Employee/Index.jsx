@@ -21,6 +21,7 @@ import { useDebounce } from "../../hooks/useDebounce";
 
 export default function Employees() {
     const { employees, title, filters } = usePage().props; // Get employees data
+    // console.log("Employees:", employees);
     const [search, setSearch] = useState(filters.search || "");
     const [sort, setSort] = useState(filters.sort || "");
 
@@ -78,6 +79,46 @@ export default function Employees() {
                     toast.error("Failed to delete employee");
                 });
         }
+    };
+
+    const confirmArchive = (id, name) => {
+        const toastId = "archive-confirmation";
+
+        toast.dismiss(toastId);
+
+        toast(
+            (t) => (
+                <span className="flex flex-col gap-2">
+                    <span>
+                        Are you sure you want to archive <b>{name}</b>?
+                    </span>
+                    <div className="flex gap-2 justify-end">
+                        <Button
+                            onPress={() => {
+                                toast.dismiss(t.id);
+                                archiveEmployee(id);
+                            }}
+                            color="primary"
+                        >
+                            Yes
+                        </Button>
+                        <Button
+                            color="danger"
+                            variant="flat"
+                            onPress={() => {
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </span>
+            ),
+            {
+                id: toastId,
+                duration: 10000,
+            }
+        );
     };
 
     const archiveEmployee = async (id) => {
@@ -162,7 +203,9 @@ export default function Employees() {
                     <TableBody emptyContent={"No rows to display."}>
                         {employees.map((employee) => (
                             <TableRow key={employee.EMPNO}>
-                                <TableCell>{employee.EMPLOYEEID}</TableCell>
+                                <TableCell>
+                                    {employee.EMPLOYEEID || "--"}
+                                </TableCell>
                                 <TableCell>{employee.EMPLOYEENAME}</TableCell>
                                 <TableCell>
                                     {employee.department?.DEPARTMENTNAME}
@@ -182,16 +225,7 @@ export default function Employees() {
                                     >
                                         Delete
                                     </Button> */}
-                                    <Button
-                                        className="w-full"
-                                        size="sm"
-                                        color="warning"
-                                        onPress={() =>
-                                            archiveEmployee(employee.EMPNO)
-                                        }
-                                    >
-                                        Archive
-                                    </Button>
+
                                     <Button
                                         className="w-full"
                                         size="sm"
@@ -203,6 +237,26 @@ export default function Employees() {
                                         )}
                                     >
                                         Update
+                                    </Button>
+                                    <Button
+                                        className="w-full"
+                                        size="sm"
+                                        color="warning"
+                                        onPress={() =>
+                                            confirmArchive(
+                                                employee.EMPNO,
+                                                employee.EMPLOYEENAME
+                                            )
+                                        }
+                                    >
+                                        Archive
+                                    </Button>
+                                    <Button
+                                        className="w-full"
+                                        size="sm"
+                                        color="primary"
+                                    >
+                                        Grant Access
                                     </Button>
                                 </TableCell>
                             </TableRow>

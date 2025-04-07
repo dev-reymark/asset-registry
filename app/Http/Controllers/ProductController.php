@@ -12,14 +12,23 @@ use Inertia\Response;
 class ProductController extends Controller
 {
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $products = Product::with(['assetType', 'assetComponent'])->get();
+        $search = $request->get('search', '');
+
+        $products = Product::with(['assetType', 'assetComponent'])
+            ->when($search, function ($query) use ($search) {
+                return $query->where('DESCRIPTION', 'like', '%' . $search . '%');
+            })
+            ->get();
 
         return Inertia::render('Product/Products', [
             'products' => $products,
             'title' => 'Products',
             'description' => 'List of Products',
+            'filters' => [
+                'search' => $search,
+            ]
         ]);
     }
 

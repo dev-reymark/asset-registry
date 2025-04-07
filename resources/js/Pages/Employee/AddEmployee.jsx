@@ -1,5 +1,5 @@
-import { Head, useForm, usePage } from "@inertiajs/react";
-import { Button, Input, Select, SelectItem } from "@heroui/react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
+import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
 import Authenticated from "../../Layouts/Authenticated";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
@@ -20,148 +20,147 @@ export default function AddEmployee() {
     }, [nextEmpno, setData]);
 
     // console.log(departments, locations, workstations, nextEmpno); // Debugging line
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        post(route("employees.store"));
-        toast.success("Employee added successfully");
+        try {
+            await post(route("employees.store"));
+            toast.success("Employee added successfully");
+        } catch (error) {
+            console.error("Error adding employee:", error);
+            toast.error("Failed to add employee. Please try again.");
+        }
     };
 
     return (
-        <Authenticated
-            auth={usePage().props.auth}
-            errors={usePage().props.errors}
-        >
-            <Head title="Add Employee" />
-            <div className="p-6 bg-white shadow rounded-lg">
-                <h1 className="text-2xl font-bold mb-4">Add New Employee</h1>
-                <form onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        {/* <Input
+        <Authenticated>
+            <Head title="Create Employee" />
+            <div className="p-6">
+                <div className="my-6">
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        as={Link}
+                        href={route("employees.index")}
+                    >
+                        ← Back to Employees
+                    </Button>
+                </div>
+
+                <h1 className="text-2xl font-bold mb-4">Create Employee</h1>
+                <Form
+                    onSubmit={handleSubmit}
+                    className="w-full flex flex-col gap-4"
+                    validationErrors={errors}
+                    onReset={() => {
+                        setData({
+                            EMPNO: "",
+                            EMPLOYEEID: "",
+                            EMPLOYEENAME: "",
+                            DEPARTMENT: "",
+                            LOCATION: "",
+                            WORKSTATION: "",
+                        });
+                    }}
+                >
+                    {/* Employee No (Auto-generated) */}
+                    {/* <Input
                             label="Employee No"
                             value={data.EMPNO}
                             onChange={(e) => setData("EMPNO", e.target.value)}
-                            error={errors.EMPNO}
-                            isReadOnly
                         /> */}
-                        <Input
-                            isRequired
-                            label="Employee ID"
-                            value={data.EMPLOYEEID}
-                            onChange={(e) =>
-                                setData("EMPLOYEEID", e.target.value)
-                            }
-                            error={errors.EMPLOYEEID ? errors.EMPLOYEEID : ""}
-                        />
-                        <Input
-                            isRequired
-                            label="Employee Name"
-                            value={data.EMPLOYEENAME}
-                            onChange={(e) =>
-                                setData("EMPLOYEENAME", e.target.value)
-                            }
-                            error={errors.EMPLOYEENAME}
-                        />
+                    <Input
+                        isRequired
+                        label="Employee ID"
+                        value={data.EMPLOYEEID}
+                        onChange={(e) => setData("EMPLOYEEID", e.target.value)}
+                    />
+                    <Input
+                        isRequired
+                        label="Employee Name"
+                        value={data.EMPLOYEENAME}
+                        onChange={(e) =>
+                            setData("EMPLOYEENAME", e.target.value)
+                        }
+                    />
 
-                        {/* Department Select */}
-                        <Select
-                            isRequired
-                            className="max-w-xs"
-                            label="Department"
-                            value={data.DEPARTMENT}
-                            onChange={(e) =>
-                                setData("DEPARTMENT", e.target.value)
-                            }
-                            error={errors.DEPARTMENT}
-                        >
-                            <SelectItem value="" disabled>
-                                Select Department
+                    {/* Department Select */}
+                    <Select
+                        isRequired
+                        label="Department"
+                        value={data.DEPARTMENT}
+                        onChange={(e) => setData("DEPARTMENT", e.target.value)}
+                    >
+                        <SelectItem value="" disabled>
+                            Select Department
+                        </SelectItem>
+                        {departments.map((department) => (
+                            <SelectItem
+                                key={department.DEPARTMETID}
+                                value={department.DEPARTMETID}
+                            >
+                                {department.DEPARTMENTNAME}
                             </SelectItem>
-                            {departments.map((department) => (
-                                <SelectItem
-                                    key={department.DEPARTMETID}
-                                    value={department.DEPARTMETID}
-                                >
-                                    {department.DEPARTMENTNAME}
-                                </SelectItem>
-                            ))}
-                        </Select>
+                        ))}
+                    </Select>
 
-                        {/* Location Select */}
-                        <Select
-                            isRequired
-                            className="max-w-xs"
-                            label="Location"
-                            value={data.LOCATION}
-                            onChange={(e) =>
-                                setData("LOCATION", e.target.value)
-                            }
-                            error={errors.LOCATION}
-                        >
-                            <SelectItem value="" disabled>
-                                Select Location
+                    {/* Location Select */}
+                    <Select
+                        isRequired
+                        label="Location"
+                        value={data.LOCATION}
+                        onChange={(e) => setData("LOCATION", e.target.value)}
+                    >
+                        <SelectItem value="" disabled>
+                            Select Location
+                        </SelectItem>
+                        {locations.map((location) => (
+                            <SelectItem
+                                key={location.LOCATIONID}
+                                value={location.LOCATIONID}
+                            >
+                                {location.LOCATIONNAME}
                             </SelectItem>
-                            {locations.map((location) => (
-                                <SelectItem
-                                    key={location.LOCATIONID}
-                                    value={location.LOCATIONID}
-                                >
-                                    {location.LOCATIONNAME}
-                                </SelectItem>
-                            ))}
-                        </Select>
+                        ))}
+                    </Select>
 
-                        {/* Workstation Select */}
-                        <Select
-                            isRequired
-                            className="max-w-xs"
-                            label="Workstation"
-                            value={data.WORKSTATION}
-                            onChange={(e) =>
-                                setData("WORKSTATION", e.target.value)
-                            }
-                            error={errors.WORKSTATION}
-                        >
-                            <SelectItem value="" disabled>
-                                Select Workstation
+                    {/* Workstation Select */}
+                    <Select
+                        isRequired
+                        label="Workstation"
+                        value={data.WORKSTATION}
+                        onChange={(e) => setData("WORKSTATION", e.target.value)}
+                    >
+                        <SelectItem value="" disabled>
+                            Select Workstation
+                        </SelectItem>
+                        {workstations.map((workstation) => (
+                            <SelectItem
+                                key={workstation.WORKSTATIONID}
+                                value={workstation.WORKSTATIONID}
+                            >
+                                {workstation.WORKSTATION}
                             </SelectItem>
-                            {workstations.map((workstation) => (
-                                <SelectItem
-                                    key={workstation.WORKSTATIONID}
-                                    value={workstation.WORKSTATIONID}
-                                >
-                                    {workstation.WORKSTATION}
-                                </SelectItem>
-                            ))}
-                        </Select>
+                        ))}
+                    </Select>
 
+                    <div className="flex gap-2 mt-4">
                         <Button
                             type="submit"
                             color="primary"
-                            disabled={processing}
-                        >
-                            Add Employee
-                        </Button>
-                        <Button
-                            type="button"
-                            color="secondary"
-                            onPress={() => window.history.back()}
                             isDisabled={processing}
                         >
-                            Cancel
+                            {processing ? "Creating..." : "Create"}
                         </Button>
-
-                        {errors.message && (
-                            <div className="text-red-500 text-xs italic">
-                                {errors.message}
-                            </div>
-                        )}
-                        {processing && (
-                            <div className="text-gray-500 text-xs italic">
-                                Processing...
-                            </div>
-                        )}
+                        <Button
+                            color="warning"
+                            variant="flat"
+                            type="reset"
+                            isDisabled={processing}
+                        >
+                            Reset
+                        </Button>
                     </div>
-                </form>
+                </Form>
             </div>
         </Authenticated>
     );
