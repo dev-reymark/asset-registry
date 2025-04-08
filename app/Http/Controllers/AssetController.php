@@ -30,12 +30,44 @@ class AssetController extends Controller
      *
      * @return \Inertia\Response
      */
-    public function index(): Response
+    // public function index(): Response
+    // {
+    //     $assets = Asset::with('employee')->active()->get();
+
+    //     return Inertia::render('Assets/Assets', [
+    //         'assets' => $assets,
+    //         'title' => 'Assets',
+    //         'description' => 'List of all employee assets',
+    //     ]);
+    // }
+
+    public function index(Request $request): Response
     {
-        $assets = Asset::with('employee')->active()->get();
+        $query = Asset::with('employee')->active();
+
+        // Apply search filter if search query is provided
+        if ($request->has('search') && $request->search !== '') {
+            $query->where(function ($q) use ($request) {
+                $q->where('ASSETSID', 'like', '%' . $request->search . '%')
+                    ->orWhere('EMPLOYEENAME', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Apply sorting if sort query is provided
+        if ($request->has('sort') && $request->sort !== '') {
+            $sortDirection = $request->sort === 'name_asc' ? 'asc' : 'desc';
+            $query->orderBy('EMPLOYEENAME', $sortDirection);
+        }
+
+        // Get the filtered and sorted assets
+        $assets = $query->get();
 
         return Inertia::render('Assets/Assets', [
             'assets' => $assets,
+            'filters' => [
+                'search' => $request->search, // Make sure search is passed correctly
+                'sort' => $request->sort,
+            ],
             'title' => 'Assets',
             'description' => 'List of all employee assets',
         ]);
@@ -302,35 +334,73 @@ class AssetController extends Controller
         ]);
     }
 
+    // public function generateEmployeeAssetReport($employeeId)
+    // {
+    //     $employee = Employee::with('assets.assetDetails')->findOrFail($employeeId);
+
+    //     foreach ($employee->assets as $asset) {
+    //         $url = URL::route('assets.show', ['id' => $asset->ASSETSID]); // Fixing the ID reference
+
+    //         $builder = new Builder(
+    //             writer: new PngWriter(),
+    //             writerOptions: [],
+    //             validateResult: false,
+    //             data: $url,
+    //             encoding: new Encoding('UTF-8'),
+    //             errorCorrectionLevel: ErrorCorrectionLevel::High,
+    //             size: 150,
+    //             margin: 5,
+    //             roundBlockSizeMode: RoundBlockSizeMode::Margin
+    //         );
+
+    //         $asset->qr_code = 'data:image/png;base64,' . base64_encode($builder->build()->getString());
+    //     }
+
+    //     Log::info($employee->assets);
+
+    //     // Generate PDF
+    //     $pdf = Pdf::loadView('pdf.employee_asset_report', compact('employee'));
+    //     $fileName = preg_replace('/\s+/', '_', trim($employee->EMPLOYEENAME)) . '_Asset_Registry_Information.pdf';
+    //     return $pdf->download($fileName);
+    // }
+
     public function generateEmployeeAssetReport($employeeId)
     {
-        $employee = Employee::with('assets.assetDetails')->findOrFail($employeeId);
+        // Fetch employee with only active assets (i.e., assets that are not archived)
+        $employee = Employee::with(['assets' => function ($query) {
+            $query->where('archived', false); // Exclude archived assets
+        }, 'assets.assetDetails' => function ($query) {
+            $query->where('archived', false); // Exclude archived asset details
+        }])->findOrFail($employeeId);
 
+        // Loop through the assets assigned to the employee and generate QR codes
         foreach ($employee->assets as $asset) {
-            $url = URL::route('assets.show', ['id' => $asset->ASSETSID]); // Fixing the ID reference
+            foreach ($asset->assetDetails as $detail) {
+                // Generate the QR code based on SYSTEMASSETID
+                $url = URL::route('assets.show', ['id' => $detail->SYSTEMASSETID]);
 
-            $builder = new Builder(
-                writer: new PngWriter(),
-                writerOptions: [],
-                validateResult: false,
-                data: $url,
-                encoding: new Encoding('UTF-8'),
-                errorCorrectionLevel: ErrorCorrectionLevel::High,
-                size: 150,
-                margin: 5,
-                roundBlockSizeMode: RoundBlockSizeMode::Margin
-            );
+                $builder = new Builder(
+                    writer: new PngWriter(),
+                    writerOptions: [],
+                    validateResult: false,
+                    data: $url,
+                    encoding: new Encoding('UTF-8'),
+                    errorCorrectionLevel: ErrorCorrectionLevel::High,
+                    size: 150,
+                    margin: 5,
+                    roundBlockSizeMode: RoundBlockSizeMode::Margin
+                );
 
-            $asset->qr_code = 'data:image/png;base64,' . base64_encode($builder->build()->getString());
+                $detail->qr_code = 'data:image/png;base64,' . base64_encode($builder->build()->getString());
+            }
         }
-
-        Log::info($employee->assets);
 
         // Generate PDF
         $pdf = Pdf::loadView('pdf.employee_asset_report', compact('employee'));
         $fileName = preg_replace('/\s+/', '_', trim($employee->EMPLOYEENAME)) . '_Asset_Registry_Information.pdf';
         return $pdf->download($fileName);
     }
+
 
     public function exportAssets()
     {
