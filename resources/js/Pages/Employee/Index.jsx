@@ -163,13 +163,23 @@ export default function Employees() {
                     isStriped
                     topContent={
                         <div className="flex items-center justify-between mb-4">
-                            <Button
-                                as={Link}
-                                href={route("employees.create")}
-                                color="primary"
-                            >
-                                Add Employee
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    as={Link}
+                                    href={route("employees.create")}
+                                    color="primary"
+                                >
+                                    Add Employee
+                                </Button>
+                                <Button
+                                    as={Link}
+                                    href={route("assets.showForm")}
+                                    color="success"
+                                    variant="flat"
+                                >
+                                    Import Data
+                                </Button>
+                            </div>
                             <Input
                                 isClearable
                                 className="w-full sm:max-w-[44%]"
@@ -216,7 +226,7 @@ export default function Employees() {
                                 <TableCell>
                                     {employee.workstation?.WORKSTATION}
                                 </TableCell>
-                                <TableCell className="flex gap-2">
+                                <TableCell className="flex gap-1">
                                     {/* <Button
                                         color="danger"
                                         onPress={() =>
@@ -226,6 +236,16 @@ export default function Employees() {
                                         Delete
                                     </Button> */}
 
+                                    <Button
+                                        className="w-full"
+                                        size="sm"
+                                        color="secondary"
+                                        variant="flat"
+                                        as={Link}
+                                        href={`/assets/${employee.EMPNO}`}
+                                    >
+                                        View Assets
+                                    </Button>
                                     <Button
                                         className="w-full"
                                         size="sm"

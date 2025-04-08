@@ -106,7 +106,7 @@ export default function Assets() {
                                     >
                                         View Assets
                                     </Button>
-                                    <Button
+                                    {/* <Button
                                         as={Link}
                                         color="success"
                                         size="sm"
@@ -125,6 +125,19 @@ export default function Assets() {
                                         }}
                                     >
                                         Print
+                                    </Button> */}
+                                    <Button
+                                        as={Link}
+                                        size="sm"
+                                        color="success"
+                                        href={route(
+                                            "assets.viewEmployeeAssets",
+                                            {
+                                                id: asset.EMPLOYEEID,
+                                            }
+                                        )}
+                                    >
+                                        View to Print
                                     </Button>
                                 </TableCell>
                             </TableRow>

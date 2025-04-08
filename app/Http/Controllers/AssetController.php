@@ -19,6 +19,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\URL;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
@@ -401,6 +402,79 @@ class AssetController extends Controller
         return $pdf->download($fileName);
     }
 
+    // public function viewEmployeeAssets($employeeId)
+    // {
+    //     // Fetch employee with only active assets (i.e., assets that are not archived)
+    //     $employee = Employee::with(['assets' => function ($query) {
+    //         $query->where('archived', false); // Exclude archived assets
+    //     }, 'assets.assetDetails' => function ($query) {
+    //         $query->where('archived', false); // Exclude archived asset details
+    //     }])->findOrFail($employeeId);
+
+    //     // Loop through the assets assigned to the employee and generate QR codes
+    //     foreach ($employee->assets as $asset) {
+    //         foreach ($asset->assetDetails as $detail) {
+    //             // Generate the QR code based on SYSTEMASSETID
+    //             $url = URL::route('assets.show', ['id' => $detail->SYSTEMASSETID]);
+
+    //             $builder = new Builder(
+    //                 writer: new PngWriter(),
+    //                 writerOptions: [],
+    //                 validateResult: false,
+    //                 data: $url,
+    //                 encoding: new Encoding('UTF-8'),
+    //                 errorCorrectionLevel: ErrorCorrectionLevel::High,
+    //                 size: 150,
+    //                 margin: 5,
+    //                 roundBlockSizeMode: RoundBlockSizeMode::Margin
+    //             );
+
+    //             $detail->qr_code = 'data:image/png;base64,' . base64_encode($builder->build()->getString());
+    //         }
+    //     }
+
+    //     // Return the Blade view as normal HTML
+    //     // return view('pdf.employee_asset_report', compact('employee'));
+    // }
+
+    public function viewEmployeeAssets($employeeId)
+    {
+        // Fetch employee with only active assets (i.e., assets that are not archived)
+        $employee = Employee::with(['assets' => function ($query) {
+            $query->where('archived', false); // Exclude archived assets
+        }, 'assets.assetDetails' => function ($query) {
+            $query->where('archived', false); // Exclude archived asset details
+        }])->findOrFail($employeeId);
+
+        // Loop through the assets assigned to the employee and generate QR codes
+        foreach ($employee->assets as $asset) {
+            foreach ($asset->assetDetails as $detail) {
+                // Generate the QR code based on SYSTEMASSETID
+                $url = URL::route('assets.show', ['id' => $detail->SYSTEMASSETID]);
+
+                $builder = new Builder(
+                    writer: new PngWriter(),
+                    writerOptions: [],
+                    validateResult: false,
+                    data: $url,
+                    encoding: new Encoding('UTF-8'),
+                    errorCorrectionLevel: ErrorCorrectionLevel::High,
+                    size: 150,
+                    margin: 5,
+                    roundBlockSizeMode: RoundBlockSizeMode::Margin
+                );
+
+                $detail->qr_code = 'data:image/png;base64,' . base64_encode($builder->build()->getString());
+            }
+        }
+
+        // Pass employee data to the Inertia component
+        return Inertia::render('Assets/ViewToPrint', [
+            'employee' => $employee,  // Pass the employee data here
+            'title' => '',
+            'description' => '',
+        ]);
+    }
 
     public function exportAssets()
     {
@@ -408,15 +482,56 @@ class AssetController extends Controller
         return Excel::download(new AssetsExport, "DSC_Assets_Registry_Information_{$year}.xlsx");
     }
 
+    public function showForm()
+    {
+        return Inertia::render('Excel/ImportForm');
+    }
+
     public function importAssets(Request $request)
     {
+        // Validate the uploaded file
         $request->validate([
-            'file' => 'required|mimes:xlsx,csv'
+            'file' => 'required|mimes:xlsx,csv|max:2048'
         ]);
 
-        Excel::import(new AssetsImport, $request->file('file'));
+        // Get the uploaded file
+        $file = $request->file('file');
 
-        return back()->with('success', 'Assets imported successfully.');
+        // Ensure the file is valid
+        if (!$file->isValid()) {
+            Log::error('Invalid file uploaded');
+            return redirect()->route('assets.showForm')->with('error', 'Invalid file uploaded.');
+        }
+
+        DB::beginTransaction(); // Start the transaction for the whole process
+
+        try {
+            // Generate a unique file name
+            $fileName = uniqid() . '-' . $file->getClientOriginalName();
+
+            // Move the file manually to storage/app/public/assets
+            $destinationPath = storage_path('app/public/assets');
+            $file->move($destinationPath, $fileName);
+            $filePath = 'assets/' . $fileName;
+
+            // Ensure the file exists before proceeding
+            if (!file_exists(storage_path('app/public/' . $filePath))) {
+                Log::error('File does not exist at path:', [storage_path('app/public/' . $filePath)]);
+                return redirect()->route('assets.showForm')->with('error', 'File does not exist.');
+            }
+
+            // Import the Excel file using the AssetsImport class
+            Excel::import(new AssetsImport, storage_path('app/public/' . $filePath));
+
+            DB::commit(); // Commit the transaction if everything is successful
+
+            // Redirect back with success message
+            return redirect()->route('assets.showForm')->with('success', 'Assets imported successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback the transaction if any error occurs
+            Log::error('Error importing file:', ['error' => $e->getMessage()]);
+            return redirect()->route('assets.showForm')->with('error', 'An error occurred during the import process.');
+        }
     }
 
     public function archive($assetId, $assetNo)

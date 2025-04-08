@@ -77,6 +77,7 @@ export default function ArchivedEmployees({ employees }) {
                 </div>
 
                 <Table
+                    isStriped
                     aria-label="Archived Employees"
                     topContent={
                         <div className="flex items-center justify-between mb-4">

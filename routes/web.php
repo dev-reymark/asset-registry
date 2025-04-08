@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/all', [AssetController::class, 'index'])->name('assets.index')->middleware(['auth', 'role:admin']);;
         Route::get('/{id}', [AssetController::class, 'show'])->name('assets.show')->middleware('auth');
         Route::get('/export/download', [AssetController::class, 'exportAssets'])->name('assets.export');
+        Route::get('/import/form', [AssetController::class, 'showForm'])->name('assets.showForm');
         Route::post('/import', [AssetController::class, 'importAssets'])->name('assets.import');
         Route::get('/{id}/create', [AssetController::class, 'create'])->name('assets.create');
         Route::post('/{id}', [AssetController::class, 'store'])->name('assets.store');
@@ -54,6 +55,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{assetId}/{assetNo}', [AssetController::class, 'update'])->name('assets.update');
         Route::put('/{assetId}/{assetNo}/archive', [AssetController::class, 'archive'])->name('assets.archive');
         Route::put('/{assetId}/{assetNo}/restore', [AssetController::class, 'restore'])->name('assets.restore');
+        
+        Route::get('/employee_asset_report/{employeeId}', [AssetController::class, 'viewEmployeeAssets'])->name('assets.viewEmployeeAssets');
     });
 
     Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['auth', 'role:admin']);
@@ -92,3 +95,5 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/assets/{systemAssetId}/qr', [AssetController::class, 'generateQrCode'])->name('assets.qr');
 Route::get('/assets/detail/{systemAssetId}', [AssetController::class, 'showAssetDetail'])->name('assets.detail');
+
+// Route::get('/pdf/employee_asset_report/{employeeId}', [AssetController::class, 'viewEmployeeAssets']);
