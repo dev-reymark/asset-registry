@@ -21,12 +21,12 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         return Inertia::render('Home');
-    })->name('home');
+    })->name('home')->middleware('auth', 'role:admin');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Employee Routes
-    Route::prefix('employees')->group(function () {
+    Route::prefix('employees')->middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/', [EmployeeController::class, 'index'])->name('employees.index');
         Route::get('/create', [EmployeeController::class, 'create'])->name('employees.create');
         Route::post('/', [EmployeeController::class, 'store'])->name('employees.store');
@@ -43,8 +43,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Asset Routes
     Route::prefix('assets')->group(function () {
-        Route::get('/all', [AssetController::class, 'index'])->name('assets.index');
-        Route::get('/{id}', [AssetController::class, 'show'])->name('assets.show');
+        Route::get('/all', [AssetController::class, 'index'])->name('assets.index')->middleware(['auth', 'role:admin']);;
+        Route::get('/{id}', [AssetController::class, 'show'])->name('assets.show')->middleware('auth');
         Route::get('/export/download', [AssetController::class, 'exportAssets'])->name('assets.export');
         Route::post('/import', [AssetController::class, 'importAssets'])->name('assets.import');
         Route::get('/{id}/create', [AssetController::class, 'create'])->name('assets.create');
@@ -56,30 +56,30 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{assetId}/{assetNo}/restore', [AssetController::class, 'restore'])->name('assets.restore');
     });
 
-    Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index');
-    Route::resource('assetComponents', AssetComponentController::class);
+    Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['auth', 'role:admin']);
+    Route::resource('assetComponents', AssetComponentController::class)->middleware(['auth', 'role:admin']);
 
     // Department Routes
-    Route::prefix('departments')->group(function () {
+    Route::prefix('departments')->middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/', [DepartmentController::class, 'index'])->name('departments.index');
         Route::get('/create', [DepartmentController::class, 'create'])->name('departments.create');
         Route::post('/', [DepartmentController::class, 'store'])->name('departments.store');
     });
 
     // Location Routes
-    Route::prefix('locations')->group(function () {
+    Route::prefix('locations')->middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/', [LocationController::class, 'index'])->name('locations.index');
         Route::get('/create', [LocationController::class, 'create'])->name('locations.create');
         Route::post('/', [LocationController::class, 'store'])->name('locations.store');
     });
 
-    Route::prefix('workstations')->group(function () {
+    Route::prefix('workstations')->middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/', [WorkStationController::class, 'index'])->name('workstations.index');
         Route::get('/create', [WorkStationController::class, 'create'])->name('workstations.create');
         Route::post('/', [WorkStationController::class, 'store'])->name('workstations.store');
     });
 
-    Route::prefix('products')->group(function () {
+    Route::prefix('products')->middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('products.index');
         Route::get('/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/', [ProductController::class, 'store'])->name('products.store');

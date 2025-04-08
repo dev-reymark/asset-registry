@@ -285,13 +285,7 @@ class EmployeeController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'user_role' => 'employee',
-        ]);
-
-        // Log the user creation for debugging purposes (optional)
-        Log::info('User created for employee:', [
-            'employee_id' => $employee->EMPNO,
-            'user_id' => $user->id,
-            'user_email' => $user->email,
+            'EMPLOYEEID' => $employee->EMPNO,
         ]);
 
         // Redirect to the employee's page or list with a success message

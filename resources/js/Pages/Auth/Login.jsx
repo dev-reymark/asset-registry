@@ -24,14 +24,22 @@ export default function Login() {
             const csrfToken = document
                 .querySelector('meta[name="csrf-token"]')
                 .getAttribute("content");
+
             const response = await axios.post(
                 "/login",
                 { email, password },
                 { headers: { "X-CSRF-TOKEN": csrfToken } }
             );
-            localStorage.setItem("token", response.data.token);
-            router.visit("/");
+
+            const user = response.data.user;
+
             toast.success("Logged in successfully");
+
+            if (user.role === "admin") {
+                router.visit("/");
+            } else if (user.role === "employee") {
+                router.visit(`/assets/${user.employee_id}`);
+            }
         } catch (error) {
             toast.error("Invalid email or password");
         } finally {

@@ -61,9 +61,9 @@ const CreateUser = ({ employee, user, title, description }) => {
                 {isUserCreated ? (
                     <div className="mt-4 space-y-4">
                         <Input label="Email" value={user.email} />
-                        <Input label="Email" value={user.user_role} />
+                        <Input label="Role" value={user.user_role} />
                         <Button
-                            color="primary"
+                            color={showUpdate ? "warning" : "primary"}
                             onPress={() => setShowUpdate(!showUpdate)}
                         >
                             {showUpdate ? "Cancel" : "Update Password"}

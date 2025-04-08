@@ -16,25 +16,36 @@ import { route } from "ziggy-js";
 import { BiSolidComponent } from "react-icons/bi";
 
 export default function Authenticated({ children }) {
-    const { url } = usePage();
+    const { url, props } = usePage();
+    const user = props.auth?.user;
+    // console.log(user);
+    // console.log(props);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const handleLogout = () => {
-        router.post("/logout");
-        router.visit("/login");
-        localStorage.removeItem("token");
-        toast.success("Logged out successfully");
+        router.post(route("logout"), {
+            onSuccess: () => {
+                localStorage.removeItem("token");
+                toast.success("Logged out successfully");
+            },
+            onError: () => {
+                toast.error("Logout failed. Please try again.");
+            },
+        });
     };
 
     return (
         <div className="flex min-h-screen relative">
             {/* Mobile Menu Button */}
-            <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="md:hidden p-4 absolute top-4 left-4 bg-indigo-700 text-white rounded-md z-50"
+            <Button
+                color="primary"
+                variant="flat"
+                onPress={() => setIsSidebarOpen(true)}
+                className="md:hidden absolute top-4 left-4 z-50"
+                isIconOnly
             >
-                <LuMenu className="w-6 h-6" />
-            </button>
+                <LuMenu className="w-6 h-8" />
+            </Button>
 
             {/* Sidebar */}
             <aside

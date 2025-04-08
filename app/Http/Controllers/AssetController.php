@@ -18,6 +18,7 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\URL;
 use Endroid\QrCode\RoundBlockSizeMode;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
@@ -60,7 +61,16 @@ class AssetController extends Controller
             ->where('archived', true)
             ->get();
 
+        $user = Auth::user();
+
         return Inertia::render('Assets/AssetView', [
+            'auth' => [
+                'user' => [
+                    'id' => $user->id,
+                    'role' => $user->user_role,
+                    'employee_id' => $user->employee ? $user->employee->EMPNO : null,
+                ]
+            ],
             'asset' => $asset,
             'archivedDetails' => $archivedDetails,
             'title' => 'Asset Details',

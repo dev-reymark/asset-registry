@@ -17,6 +17,9 @@ import { route } from "ziggy-js";
 
 export default function AssetView() {
     const { asset, archivedDetails } = usePage().props; // Get asset
+    const userRole = usePage().props.auth?.user?.role;
+    // Get the logged-in user's role
+    // console.log("User role:", userRole);
     // console.log(asset);
 
     const archiveAsset = (assetId, assetNo) => {
@@ -55,14 +58,16 @@ export default function AssetView() {
             <Head title={`Asset Details - ${asset.ASSETSID}`} />
             <div className="p-6">
                 <div className="my-6">
-                    <Button
-                        color="primary"
-                        variant="flat"
-                        as={Link}
-                        href={route("assets.index")}
-                    >
-                        ← Back to Assets
-                    </Button>
+                    {userRole === "admin" && (
+                        <Button
+                            color="primary"
+                            variant="flat"
+                            as={Link}
+                            href={route("assets.index")}
+                        >
+                            ← Back to Assets
+                        </Button>
+                    )}
                 </div>
                 <h1 className="text-2xl font-bold mb-4">
                     General Asset Information
@@ -89,17 +94,19 @@ export default function AssetView() {
                             aria-label="Asset Details table"
                             isStriped
                             topContent={
-                                <div className="flex justify-end items-center">
-                                    <Button
-                                        color="primary"
-                                        as={Link}
-                                        href={route("assets.create", {
-                                            id: asset.ASSETSID,
-                                        })}
-                                    >
-                                        Add New Asset
-                                    </Button>
-                                </div>
+                                userRole === "admin" && (
+                                    <div className="flex justify-end items-center">
+                                        <Button
+                                            color="primary"
+                                            as={Link}
+                                            href={route("assets.create", {
+                                                id: asset.ASSETSID,
+                                            })}
+                                        >
+                                            Add New Asset
+                                        </Button>
+                                    </div>
+                                )
                             }
                         >
                             <TableHeader>
@@ -123,29 +130,39 @@ export default function AssetView() {
                                 {asset.asset_details.map((detail) => (
                                     <TableRow key={detail.ASSETNO}>
                                         <TableCell className="flex flex-col gap-1">
-                                            <Button
-                                                as={Link}
-                                                href={route("assets.edit", {
-                                                    assetId: detail.ASSETID,
-                                                    assetNo: detail.ASSETNO,
-                                                })}
-                                                color="success"
-                                                size="sm"
-                                            >
-                                                Update
-                                            </Button>
-                                            <Button
-                                                color="warning"
-                                                size="sm"
-                                                onPress={() =>
-                                                    archiveAsset(
-                                                        detail.ASSETID,
-                                                        detail.ASSETNO
-                                                    )
-                                                }
-                                            >
-                                                Archive
-                                            </Button>
+                                            {(userRole === "admin" && (
+                                                <>
+                                                    <Button
+                                                        as={Link}
+                                                        href={route(
+                                                            "assets.edit",
+                                                            {
+                                                                assetId:
+                                                                    detail.ASSETID,
+                                                                assetNo:
+                                                                    detail.ASSETNO,
+                                                            }
+                                                        )}
+                                                        color="success"
+                                                        size="sm"
+                                                    >
+                                                        Update
+                                                    </Button>
+                                                    <Button
+                                                        color="warning"
+                                                        size="sm"
+                                                        onPress={() =>
+                                                            archiveAsset(
+                                                                detail.ASSETID,
+                                                                detail.ASSETNO
+                                                            )
+                                                        }
+                                                    >
+                                                        Archive
+                                                    </Button>
+                                                </>
+                                            )) ||
+                                                "--"}
                                         </TableCell>
                                         <TableCell>
                                             {detail.SYSTEMASSETID}
@@ -214,18 +231,21 @@ export default function AssetView() {
                                 {archivedDetails.map((detail) => (
                                     <TableRow key={detail.ASSETNO}>
                                         <TableCell className="flex flex-col gap-1">
-                                            <Button
-                                                color="success"
-                                                size="sm"
-                                                onPress={() =>
-                                                    restoreAsset(
-                                                        detail.ASSETID,
-                                                        detail.ASSETNO
-                                                    )
-                                                }
-                                            >
-                                                Restore
-                                            </Button>
+                                            {(userRole === "admin" && (
+                                                <Button
+                                                    color="success"
+                                                    size="sm"
+                                                    onPress={() =>
+                                                        restoreAsset(
+                                                            detail.ASSETID,
+                                                            detail.ASSETNO
+                                                        )
+                                                    }
+                                                >
+                                                    Restore
+                                                </Button>
+                                            )) ||
+                                                "--"}
                                         </TableCell>
                                         <TableCell>
                                             {detail.SYSTEMASSETID}

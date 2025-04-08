@@ -20,7 +20,17 @@ class AuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'))) {
             $request->session()->regenerate();
-            return response()->json(['message' => 'Login successful']);
+
+            $user = Auth::user();
+            $user->load('employee');
+            return response()->json([
+                'message' => 'Login successful',
+                'user' => [
+                    'id' => $user->id,
+                    'role' => $user->user_role,
+                    'employee_id' => $user->employee ? $user->employee->EMPNO : null, // safe access
+                ]
+            ]);
         }
 
         return response()->json(['message' => 'Invalid credentials'], 401);
@@ -35,6 +45,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return redirect('/login');
     }
 }
