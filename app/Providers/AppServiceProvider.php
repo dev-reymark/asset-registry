@@ -12,10 +12,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $router = $this->app['router'];
-        
-        // Register middleware for routes
-        $router->aliasMiddleware('role', RoleMiddleware::class);
+
     }
 
     /**

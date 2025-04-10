@@ -2,10 +2,13 @@ import { Link } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
 import { Button } from "@heroui/react";
 export default function EmployeeAssetRegistry({ employee }) {
-    console.log(employee); // Check if employee is not null
+    // console.log(employee); // Check if employee is not null
 
-    // Check if employee and assets are defined before using map
     const assets = employee?.assets ?? [];
+
+    const printPage = () => {
+        window.print(); // Trigger print dialog
+    };
 
     return (
         <Authenticated>
@@ -15,7 +18,7 @@ export default function EmployeeAssetRegistry({ employee }) {
                     size="sm"
                     color="primary"
                     variant="flat"
-                    href={route("assets.index")}
+                    href={route("assets.show", employee?.EMPNO)}
                 >
                     ← Back to Assets
                 </Button>
@@ -23,12 +26,12 @@ export default function EmployeeAssetRegistry({ employee }) {
                     {employee?.EMPLOYEENAME.trim() ?? "Employee Name"}
                 </h2>
 
-                <Button as={Link} size="sm" color="primary">
+                <Button size="sm" color="primary" onPress={printPage}>
                     Print
                 </Button>
 
                 {assets.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 my-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5 my-5">
                         {assets.map((asset) =>
                             asset.asset_details?.map((detail) => (
                                 <div
@@ -47,19 +50,19 @@ export default function EmployeeAssetRegistry({ employee }) {
 
                                     {/* Asset Details Section */}
                                     <div className="flex flex-col justify-between w-full">
-                                        <p className="text-sm mb-1">
+                                        <p className="text-md font-bold mb-1">
                                             {detail.DESCRIPTION?.trim() ?? "--"}
                                         </p>
-                                        <p className="text-sm mb-1">
+                                        <p className="text-sm">
                                             {detail.MODEL?.trim() ?? "--"}
                                         </p>
-                                        <p className="text-sm font-semibold mb-1">
+                                        <p className="text-sm font-semibold">
                                             <span className="font-normal">
                                                 SN:
                                             </span>{" "}
                                             {detail.SERIALNO?.trim() ?? "--"}
                                         </p>
-                                        <p className="text-sm font-semibold mb-1">
+                                        <p className="text-sm font-semibold">
                                             <span className="font-normal">
                                                 Issued To:
                                             </span>{" "}

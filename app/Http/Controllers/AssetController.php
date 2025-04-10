@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Exports\AssetsExport;
 use App\Imports\AssetsImport;
+use App\Models\ArchivedAssetDetail;
 use App\Models\Asset;
 use App\Models\AssetDetail;
 use App\Models\Employee;
 use App\Models\Product;
+use App\Models\WorkStation;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,9 +45,41 @@ class AssetController extends Controller
     //     ]);
     // }
 
+    // public function index(Request $request): Response
+    // {
+    //     $query = Asset::with('employee')->active();
+
+    //     // Apply search filter if search query is provided
+    //     if ($request->has('search') && $request->search !== '') {
+    //         $query->where(function ($q) use ($request) {
+    //             $q->where('ASSETSID', 'like', '%' . $request->search . '%')
+    //                 ->orWhere('EMPLOYEENAME', 'like', '%' . $request->search . '%');
+    //         });
+    //     }
+
+    //     // Apply sorting if sort query is provided
+    //     if ($request->has('sort') && $request->sort !== '') {
+    //         $sortDirection = $request->sort === 'name_asc' ? 'asc' : 'desc';
+    //         $query->orderBy('EMPLOYEENAME', $sortDirection);
+    //     }
+
+    //     // Get the filtered and sorted assets
+    //     $assets = $query->get();
+
+    //     return Inertia::render('Assets/Assets', [
+    //         'assets' => $assets,
+    //         'filters' => [
+    //             'search' => $request->search, // Make sure search is passed correctly
+    //             'sort' => $request->sort,
+    //         ],
+    //         'title' => 'Assets',
+    //         'description' => 'List of all employee assets',
+    //     ]);
+    // }
+
     public function index(Request $request): Response
     {
-        $query = Asset::with('employee')->active();
+        $query = Asset::with('assetDetails', 'employee.workstation')->active();
 
         // Apply search filter if search query is provided
         if ($request->has('search') && $request->search !== '') {
@@ -60,6 +95,38 @@ class AssetController extends Controller
             $query->orderBy('EMPLOYEENAME', $sortDirection);
         }
 
+        // Apply date range filter
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereHas('assetDetails', function ($q) use ($request) {
+                $q->whereBetween('DATEISSUUED', [
+                    Carbon::parse($request->start_date)->startOfDay(),
+                    Carbon::parse($request->end_date)->endOfDay(),
+                ]);
+            });
+        }
+
+        if ($request->filled('description')) {
+            $query->whereHas('assetDetails', function ($q) use ($request) {
+                $q->where('DESCRIPTION', $request->description);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->whereHas('assetDetails', function ($q) use ($request) {
+                $q->where('STATUS', $request->status);
+            });
+        }
+
+        if ($request->filled('issued_to')) {
+            $query->whereHas('assetDetails', function ($q) use ($request) {
+                $q->where('ISSUEDTO', $request->issued_to);
+            });
+        }
+
+        $descriptions = AssetDetail::distinct()->pluck('DESCRIPTION');
+        $statuses = AssetDetail::distinct()->pluck('STATUS');
+        $issuedTos = AssetDetail::distinct()->pluck('ISSUEDTO');
+
         // Get the filtered and sorted assets
         $assets = $query->get();
 
@@ -68,9 +135,14 @@ class AssetController extends Controller
             'filters' => [
                 'search' => $request->search, // Make sure search is passed correctly
                 'sort' => $request->sort,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
             ],
+            'descriptions' => $descriptions,
+            'statuses' => $statuses,
+            'issuedTos' => $issuedTos,
             'title' => 'Assets',
-            'description' => 'List of all employee assets',
+            'desc' => 'List of all employee assets',
         ]);
     }
 
@@ -82,7 +154,7 @@ class AssetController extends Controller
      */
     public function show($id): Response
     {
-        $asset = Asset::with(['employee', 'assetType', 'assetComponents'])->findOrFail($id);
+        $asset = Asset::with(['employee.workstation', 'assetType', 'assetComponents'])->findOrFail($id);
 
         $asset->load([
             'assetDetails' => function ($q) {
@@ -113,8 +185,9 @@ class AssetController extends Controller
 
     public function create($id): Response
     {
-        $asset = Asset::with(['employee', 'assetDetails', 'assetType', 'assetComponents'])->findOrFail($id);
+        $asset = Asset::with(['employee.workstation', 'assetDetails', 'assetType', 'assetComponents'])->findOrFail($id);
         $products = Product::all();
+        // $workstations = WorkStation::all();
 
         // Get the last EMPNO and increment it
         $assetno = AssetDetail::max('ASSETNO');
@@ -124,6 +197,7 @@ class AssetController extends Controller
             'asset' => $asset,
             'products' => $products,
             'assetno' => $newassetno,
+            // 'workstations' => $workstations,
             'title' => 'Add Assets',
             'description' => 'Add a new asset',
         ]);
@@ -139,7 +213,7 @@ class AssetController extends Controller
             'PRODUCTID' => 'nullable|string',
             'DESCRIPTION' => 'nullable|string',
             'MODEL' => 'nullable|string',
-            'SERIALNO' => 'nullable|string|unique:AssetDetails,SERIALNO',
+            'SERIALNO' => 'nullable|string',
             'STATUS' => 'nullable|string',
             'SYSTEMASSETID' => 'nullable|string|unique:AssetDetails,SYSTEMASSETID',
         ]);
@@ -153,7 +227,7 @@ class AssetController extends Controller
         $employee = Employee::findOrFail($employeeId);
 
         try {
-            AssetDetail::create([
+            $assetdetail = AssetDetail::create([
                 'ASSETID' => $request->ASSETSID,
                 'EMPLOYEEID' => $employee->EMPNO,
                 'ASSETNO' => $request->ASSETNO,
@@ -168,7 +242,9 @@ class AssetController extends Controller
                 'ASSETFROM' => $request->ASSETFROM,
                 'CONDITIONS' => $request->CONDITIONS,
                 'SYSTEMASSETID' => $request->SYSTEMASSETID,
+                'WORKSTATION' => $request->WORKSTATION,
             ]);
+            Log::info('AssetDetails to save', $assetdetail->toArray());
         } catch (\Exception $e) {
             Log::error('Error saving AssetDetail: ' . $e->getMessage());
             return redirect()->back()->with('error', 'There was an error saving the asset.');
@@ -534,11 +610,22 @@ class AssetController extends Controller
         }
     }
 
-    public function archive($assetId, $assetNo)
+    public function archive(Request $request, $assetId, $assetNo)
     {
+        Log::info('Archiving request:', $request->all());
+
         $assetDetail = AssetDetail::where('ASSETID', $assetId)
             ->where('ASSETNO', $assetNo)
             ->firstOrFail();
+
+        // Store archival details
+        ArchivedAssetDetail::create([
+            'asset_detail_id' => $assetDetail->ASSETNO,
+            'archival_reason' => $request->reason,
+            'status' => $request->status,
+            'conditions' => $request->condition,
+            'archived_at' => now(),
+        ]);
 
         $assetDetail->update(['archived' => true]);
 

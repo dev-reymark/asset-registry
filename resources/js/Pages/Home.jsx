@@ -1,12 +1,13 @@
 import { IoLogOut, IoPeopleCircleOutline } from "react-icons/io5";
-import { Button, Card, Image, Link } from "@heroui/react";
+import { Button, Card, Image } from "@heroui/react";
 import { TbFileImport } from "react-icons/tb";
 import { FcPrint } from "react-icons/fc";
 import QRScanner from "../Components/QRScanner";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import ApplicationLogo from "../Components/ApplicationLogo";
-import { router } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
+import { route } from "ziggy-js";
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function Home() {
     const handleExportAssets = async () => {
         setLoading(true);
         try {
-            const response = await axios.get("/assets/export/download", {
+            const response = await axios.get(route("assets.export"), {
                 responseType: "blob", // Important for downloading files
             });
 
@@ -87,42 +88,6 @@ export default function Home() {
                         </div>
                     </div>
                 </Card>
-
-                {/* <Card
-                    isPressable
-                    as={Link}
-                    href="/assets/import-assets"
-                    className="w-full h-[230px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
-                >
-                    <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
-                        <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                            IMPORT ASSETS
-                        </h3>
-                        <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
-                            <TbFileImport className="text-3xl" />
-                        </div>
-                    </div>
-
-                    <form
-                        action="/assets/import"
-                        method="POST"
-                        encType="multipart/form-data"
-                        className="w-full text-center"
-                    >
-                        <input
-                            type="file"
-                            name="file"
-                            required
-                            className="my-2"
-                        />
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                        >
-                            Import Excel/CSV
-                        </button>
-                    </form>
-                </Card> */}
 
                 <Card
                     as={Link}

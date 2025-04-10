@@ -4,8 +4,8 @@ import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
 import toast from "react-hot-toast";
 
 export default function AddAsset() {
-    const { asset, products, assetno } = usePage().props;
-    // console.log(asset, products, assetno);
+    const { asset, products, assetno, workstations } = usePage().props;
+    // console.log(workstations);
     const { data, setData, post, processing, errors } = useForm({
         ASSETSID: asset.ASSETSID,
         ASSETNO: assetno,
@@ -25,7 +25,7 @@ export default function AddAsset() {
         NOPRINT: "",
         COMPONENT: "",
         WITHCOMPONENTS: "",
-        SYSTEMASSETID: `${asset?.EMPLOYEEID}-${asset?.ASSETSID}-${assetno}`,
+        SYSTEMASSETID: `${asset?.employee?.EMPLOYEEID}-${asset?.ASSETSID}-${assetno}`,
         SYSTEMCOMPONENTID: "",
     });
 
@@ -95,7 +95,7 @@ export default function AddAsset() {
                             NOPRINT: "",
                             COMPONENT: "",
                             WITHCOMPONENTS: "",
-                            SYSTEMASSETID: `${asset?.EMPLOYEEID}-${asset?.ASSETSID}`,
+                            SYSTEMASSETID: `${asset?.employee?.EMPLOYEEID}-${asset?.ASSETSID}-${assetno}`,
                             SYSTEMCOMPONENTID: "",
                         });
                     }}
@@ -205,6 +205,26 @@ export default function AddAsset() {
                         value={data.CONDITIONS}
                         onChange={(e) => setData("CONDITIONS", e.target.value)}
                     />
+
+                    {/* Workstation Select */}
+                    <Select
+                        isRequired
+                        label="Workstation"
+                        value={data.WORKSTATION}
+                        onChange={(e) => setData("WORKSTATION", e.target.value)}
+                    >
+                        <SelectItem value="" disabled>
+                            Select Workstation
+                        </SelectItem>
+                        {asset?.employee?.workstation && (
+                            <SelectItem
+                                key={asset.employee.workstation.WORKSTATIONID}
+                                value={asset.employee.workstation.WORKSTATIONID}
+                            >
+                                {asset.employee.workstation.WORKSTATION}
+                            </SelectItem>
+                        )}
+                    </Select>
 
                     {/* System Asset ID */}
                     <Input

@@ -51,7 +51,7 @@ export default function CreateAssetComponent({ assetTypes }) {
                         as={Link}
                         href={route("assetComponents.index")}
                     >
-                        ← Back
+                        ← Back to Asset Components
                     </Button>
                 </div>
                 <h1 className="text-2xl font-bold mb-4">

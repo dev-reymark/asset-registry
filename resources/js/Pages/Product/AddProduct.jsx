@@ -1,4 +1,4 @@
-import { Head, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
 import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
 import toast from "react-hot-toast";
@@ -25,6 +25,17 @@ export default function AddProduct({
         <Authenticated>
             <Head title="Add Product" />
             <div className="p-6">
+                <div className="my-6">
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        as={Link}
+                        href={route("products.index")}
+                    >
+                        ← Back to Products
+                    </Button>
+                </div>
+
                 <h2 className="text-xl font-bold">{title}</h2>
                 <p className="mb-4">{description}</p>
 

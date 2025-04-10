@@ -5,7 +5,7 @@ import Authenticated from "../../Layouts/Authenticated";
 import { Head, Link } from "@inertiajs/react";
 import { Button } from "@heroui/react";
 
-const ImportForm = ({ flash }) => {
+const ImportForm = () => {
     const [file, setFile] = useState(null);
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState();

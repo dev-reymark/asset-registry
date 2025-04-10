@@ -12,7 +12,7 @@ class AssetsExport implements FromCollection, WithHeadings
     public function collection()
     {
         // Get employees with their assets and asset details
-        $employees = Employee::with(['assets.assetDetails', 'department', 'location', 'workstation'])->get();
+        $employees = Employee::active()->with(['assets.assetDetails', 'department', 'location', 'workstation'])->get();
         Log::info('Employees retrieved:', $employees->toArray());
 
         $data = [];

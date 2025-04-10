@@ -28,7 +28,7 @@ class AssetDetail extends Model
         'STATUS',
         'ASSETFROM',
         'CONDITIONS',
-        'WORKSTAION',
+        'WORKSTATION',
         'TYPESIZE',
         'NOPRINT',
         'COMPONENT',
@@ -59,5 +59,23 @@ class AssetDetail extends Model
     public function scopeActive($query)
     {
         return $query->where('archived', false);
+    }
+
+    /**
+     * Archive the asset and store the archival details.
+     */
+    public function archive($reason, $status, $conditions)
+    {
+        // Store archival details
+        ArchivedAssetDetail::create([
+            'asset_detail_id' => $this->ASSETNO,
+            'archival_reason' => $reason,
+            'status' => $status,
+            'conditions' => $conditions,
+        ]);
+
+        // Mark the asset as archived
+        $this->archived = true;
+        $this->save();
     }
 }

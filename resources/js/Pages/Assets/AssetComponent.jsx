@@ -12,7 +12,7 @@ import {
 
 export default function AssetComponent() {
     const { assetComponents } = usePage().props;
-    console.log(assetComponents);
+    // console.log(assetComponents);
 
     return (
         <Authenticated>

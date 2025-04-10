@@ -1,8 +1,14 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
 import {
     Button,
     Chip,
+    Input,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalHeader,
+    ModalFooter,
     Tab,
     Table,
     TableBody,
@@ -11,26 +17,42 @@ import {
     TableHeader,
     TableRow,
     Tabs,
+    Textarea,
+    useDisclosure,
 } from "@heroui/react";
 import toast from "react-hot-toast";
 import { route } from "ziggy-js";
+import { useState } from "react";
 
 export default function AssetView() {
     const { asset, archivedDetails } = usePage().props; // Get asset
-    const userRole = usePage().props.auth?.user?.role;
-    // Get the logged-in user's role
-    // console.log("User role:", userRole);
+    // const { data, setData } = useForm({});
     // console.log(asset);
+    const userRole = usePage().props.auth?.user?.role;
+    const { isOpen, onOpen, onClose } = useDisclosure();
+    const [reason, setReason] = useState("");
+    const [status, setStatus] = useState("");
+    const [condition, setCondition] = useState("");
 
-    const archiveAsset = (assetId, assetNo) => {
+    const archiveAsset = (assetId, assetNo, reason, status, condition) => {
         router.post(
             route("assets.archive", { assetId, assetNo }),
             {
                 _method: "PUT",
+                reason,
+                status,
+                condition,
             },
             {
-                onSuccess: () => toast.success("Asset archived!"),
-                onError: () => toast.error("Failed to archive asset."),
+                onSuccess: () => {
+                    toast.success("Asset archived!");
+                    onClose();
+                },
+                onError: (err) => {
+                    toast.error(
+                        "Failed to archive asset. " + (err?.message || "")
+                    );
+                },
             }
         );
         router.reload();
@@ -43,8 +65,14 @@ export default function AssetView() {
                 _method: "PUT",
             },
             {
-                onSuccess: () => toast.success("Asset restored!"),
-                onError: () => toast.error("Failed to restore asset."),
+                onSuccess: () => {
+                    toast.success("Asset restored!");
+                    setIsLoading(false); // Stop loading
+                },
+                onError: () => {
+                    toast.error("Failed to restore asset.");
+                    setIsLoading(false); // Stop loading
+                },
             }
         );
         router.reload();
@@ -95,7 +123,7 @@ export default function AssetView() {
                             isStriped
                             topContent={
                                 userRole === "admin" && (
-                                    <div className="flex justify-end items-center">
+                                    <div className="flex justify-start items-center gap-2">
                                         <Button
                                             color="primary"
                                             as={Link}
@@ -104,6 +132,19 @@ export default function AssetView() {
                                             })}
                                         >
                                             Add New Asset
+                                        </Button>
+                                        <Button
+                                            as={Link}
+                                            color="success"
+                                            variant="flat"
+                                            href={route(
+                                                "assets.viewEmployeeAssets",
+                                                {
+                                                    id: asset.EMPLOYEEID,
+                                                }
+                                            )}
+                                        >
+                                            View to Print
                                         </Button>
                                     </div>
                                 )
@@ -151,12 +192,13 @@ export default function AssetView() {
                                                     <Button
                                                         color="warning"
                                                         size="sm"
-                                                        onPress={() =>
-                                                            archiveAsset(
-                                                                detail.ASSETID,
-                                                                detail.ASSETNO
-                                                            )
-                                                        }
+                                                        onPress={() => {
+                                                            // Open modal
+                                                            setReason("");
+                                                            setStatus("");
+                                                            setCondition("");
+                                                            onOpen();
+                                                        }}
                                                     >
                                                         Archive
                                                     </Button>
@@ -194,14 +236,17 @@ export default function AssetView() {
                                         </TableCell>
                                         <TableCell>{detail.TYPESIZE}</TableCell>
                                         <TableCell>
-                                            {detail.WORKSTATION}
+                                            {
+                                                asset.employee?.workstation
+                                                    ?.WORKSTATION
+                                            }
                                         </TableCell>
 
                                         <TableCell>
                                             {detail.WITHCOMPONENTS}
                                         </TableCell>
                                         <TableCell>
-                                            {detail.COMPONENTS}
+                                            {detail.COMPONENTS || "--"}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -291,6 +336,59 @@ export default function AssetView() {
                         </Table>
                     </Tab>
                 </Tabs>
+
+                <Modal isOpen={isOpen} onClose={onClose} onOpenChange={onClose}>
+                    <ModalContent>
+                        <ModalHeader>
+                            Are you sure you want to archive?
+                        </ModalHeader>
+                        <ModalBody>
+                            <Input
+                                isRequired
+                                label="Reason for Archiving"
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                            />
+                            <Textarea
+                                variant="faded"
+                                isRequired
+                                label="Asset Status"
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                            />
+                            <Textarea
+                                variant="faded"
+                                isRequired
+                                label="Asset Condition"
+                                value={condition}
+                                onChange={(e) => setCondition(e.target.value)}
+                            />
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                color="warning"
+                                onPress={() =>
+                                    archiveAsset(
+                                        asset.asset_details[0].ASSETID,
+                                        asset.asset_details[0].ASSETNO,
+                                        reason,
+                                        status,
+                                        condition
+                                    )
+                                }
+                            >
+                                Archive
+                            </Button>
+                            <Button
+                                color="danger"
+                                variant="flat"
+                                onPress={onClose}
+                            >
+                                Close
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
             </div>
         </Authenticated>
     );

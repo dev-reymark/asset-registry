@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { LuMenu } from "react-icons/lu";
 import { route } from "ziggy-js";
 import { BiSolidComponent } from "react-icons/bi";
+import { RxDashboard } from "react-icons/rx";
 
 export default function Authenticated({ children }) {
     const { url, props } = usePage();
@@ -44,7 +45,7 @@ export default function Authenticated({ children }) {
                 className="md:hidden absolute top-4 left-4 z-50"
                 isIconOnly
             >
-                <LuMenu className="w-6 h-8" />
+                <RxDashboard className="w-8 h-8" />
             </Button>
 
             {/* Sidebar */}
@@ -93,15 +94,15 @@ export default function Authenticated({ children }) {
                         href={route("assets.index")}
                     >
                         <FaBoxOpen className="w-5 h-5" />
-                        <span className="ml-4">Employee Assets</span>
+                        <span className="ml-4">Assets</span>
                     </Link>
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                            url.startsWith("/departments")
+                            url.startsWith(route("departments.index"))
                                 ? "bg-indigo-600"
                                 : "hover:bg-indigo-600"
                         }`}
-                        href="/departments"
+                        href={route("departments.index")}
                     >
                         <MdCorporateFare className="w-5 h-5" />
                         <span className="ml-4">Department</span>
@@ -120,11 +121,11 @@ export default function Authenticated({ children }) {
 
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                            route().current("components.index")
+                            route().current("assetComponents.index")
                                 ? "bg-indigo-600"
                                 : "hover:bg-indigo-600"
                         }`}
-                        href={route("components.index")}
+                        href={route("assetComponents.index")}
                     >
                         <BiSolidComponent className="w-5 h-5" />
                         <span className="ml-4">Asset Component</span>
@@ -174,7 +175,7 @@ export default function Authenticated({ children }) {
 
             {/* Main Content - Scrollable */}
             <div className="flex flex-col flex-1 md:ml-64 h-screen overflow-hidden">
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 overflow-y-auto p-2 mt-10">
                     <div className="mx-auto max-w-7xl">{children}</div>
                 </main>
             </div>
