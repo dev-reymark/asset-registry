@@ -42,7 +42,18 @@ class EmployeeController extends Controller
         $query = Employee::active()->with(['department', 'location', 'workstation']);
 
         if ($search) {
-            $query->where('EMPLOYEENAME', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->where('EMPLOYEENAME', 'like', '%' . $search . '%')
+                    ->orWhereHas('department', function ($q) use ($search) {
+                        $q->where('DEPARTMENTNAME', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('location', function ($q) use ($search) {
+                        $q->where('LOCATIONNAME', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('workstation', function ($q) use ($search) {
+                        $q->where('WORKSTATION', 'like', '%' . $search . '%');
+                    });
+            });
         }
 
         if ($sort === 'name_asc') {

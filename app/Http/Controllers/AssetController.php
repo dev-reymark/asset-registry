@@ -79,13 +79,22 @@ class AssetController extends Controller
 
     public function index(Request $request): Response
     {
-        $query = Asset::with('assetDetails', 'employee.workstation')->active();
+        $query = Asset::with('assetDetails', 'employee.department', 'employee.location', 'employee.workstation')->active();
 
         // Apply search filter if search query is provided
         if ($request->has('search') && $request->search !== '') {
             $query->where(function ($q) use ($request) {
                 $q->where('ASSETSID', 'like', '%' . $request->search . '%')
-                    ->orWhere('EMPLOYEENAME', 'like', '%' . $request->search . '%');
+                    ->orWhere('EMPLOYEENAME', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('employee.department', function ($q2) use ($request) {
+                        $q2->where('DEPARTMENTNAME', 'like', '%' . $request->search . '%');
+                    })
+                    ->orWhereHas('employee.location', function ($q2) use ($request) {
+                        $q2->where('LOCATIONNAME', 'like', '%' . $request->search . '%');
+                    })
+                    ->orWhereHas('employee.workstation', function ($q2) use ($request) {
+                        $q2->where('WORKSTATION', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 

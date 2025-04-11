@@ -20,8 +20,6 @@ import { useState } from "react";
 import { useDebounce } from "../../hooks/useDebounce";
 import { CiCirclePlus, CiFilter, CiSearch } from "react-icons/ci";
 import { route } from "ziggy-js";
-import { RxCross2 } from "react-icons/rx";
-import { FaPlus } from "react-icons/fa";
 
 export default function Assets() {
     const {
@@ -130,7 +128,7 @@ export default function Assets() {
                     <Input
                         isClearable
                         className="w-full sm:max-w-[44%]"
-                        placeholder="Search by employee name..."
+                        placeholder="Search..."
                         startContent={<CiSearch className="size-5" />}
                         value={search}
                         onClear={onClear}
@@ -155,7 +153,7 @@ export default function Assets() {
                         <Dropdown>
                             <DropdownTrigger>
                                 <Button variant="bordered">
-                                    Filter by Date
+                                    Filter by Date Issued
                                 </Button>
                             </DropdownTrigger>
                             <DropdownMenu
@@ -221,12 +219,13 @@ export default function Assets() {
                             style={{ cursor: "pointer" }}
                         >
                             EMPLOYEE NAME
-                            {sort === "name_asc"
-                                ? " 🔼"
-                                : sort === "name_desc"
-                                ? " 🔽"
-                                : ""}
+                            {sort === "name_asc" && " 🔼"}
+                            {sort === "name_desc" && " 🔽"}
+                            {!["name_asc", "name_desc"].includes(sort) && " ⏺️"}
                         </TableColumn>
+                        <TableColumn>Department</TableColumn>
+                        <TableColumn>Asset Location</TableColumn>
+                        <TableColumn>Workstation</TableColumn>
                         <TableColumn>System Asset ID</TableColumn>
                         <TableColumn>Description</TableColumn>
                         <TableColumn>Model</TableColumn>
@@ -238,7 +237,7 @@ export default function Assets() {
                         <TableColumn>Condition</TableColumn>
                         <TableColumn>Asset From</TableColumn>
                         <TableColumn>Type/Size</TableColumn>
-                        <TableColumn>Workstation</TableColumn>
+                        {/* <TableColumn>Workstation</TableColumn> */}
                         <TableColumn>With Components</TableColumn>
                         <TableColumn>Components</TableColumn>
                     </TableHeader>
@@ -250,7 +249,18 @@ export default function Assets() {
                                     {asset?.employee?.EMPLOYEEID || "--"}
                                 </TableCell>
                                 <TableCell>{asset.EMPLOYEENAME}</TableCell>
-
+                                <TableCell>
+                                    {
+                                        asset?.employee?.department
+                                            ?.DEPARTMENTNAME
+                                    }
+                                </TableCell>
+                                <TableCell>
+                                    {asset?.employee?.location?.LOCATIONNAME}
+                                </TableCell>
+                                <TableCell>
+                                    {asset?.employee?.workstation?.WORKSTATION}
+                                </TableCell>
                                 <TableCell>
                                     {asset.asset_details[0]?.SYSTEMASSETID}
                                 </TableCell>
@@ -284,9 +294,9 @@ export default function Assets() {
                                 <TableCell>
                                     {asset.asset_details[0]?.TYPE}
                                 </TableCell>
-                                <TableCell>
+                                {/* <TableCell>
                                     {asset.employee?.workstation?.WORKSTATION}
-                                </TableCell>
+                                </TableCell> */}
                                 <TableCell>
                                     {asset.asset_details[0]?.WITHCOMPONENTS}
                                 </TableCell>

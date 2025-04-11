@@ -17,7 +17,8 @@ import toast from "react-hot-toast";
 import { CiSearch } from "react-icons/ci";
 
 export default function ArchivedEmployees({ employees }) {
-    console.log("Archived Employees:", employees);
+    // console.log("Archived Employees:", employees);
+    
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;

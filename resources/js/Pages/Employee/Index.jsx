@@ -183,7 +183,7 @@ export default function Employees() {
                             <Input
                                 isClearable
                                 className="w-full sm:max-w-[44%]"
-                                placeholder="Search by name..."
+                                placeholder="Search..."
                                 startContent={<CiSearch className="size-5" />}
                                 value={search}
                                 onClear={onClear}
