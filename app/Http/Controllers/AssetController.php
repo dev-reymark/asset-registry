@@ -173,6 +173,7 @@ class AssetController extends Controller
 
         $archivedDetails = $asset->assetDetails()
             ->where('archived', true)
+            ->with('archivedDetail')
             ->get();
 
         $user = Auth::user();

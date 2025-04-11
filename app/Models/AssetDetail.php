@@ -78,4 +78,9 @@ class AssetDetail extends Model
         $this->archived = true;
         $this->save();
     }
+
+    public function archivedDetail()
+    {
+        return $this->hasOne(ArchivedAssetDetail::class, 'asset_detail_id', 'ASSETNO');
+    }
 }

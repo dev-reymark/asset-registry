@@ -27,14 +27,35 @@ import { useState } from "react";
 export default function AssetView() {
     const { asset, archivedDetails } = usePage().props; // Get asset
     // const { data, setData } = useForm({});
-    // console.log(asset);
+    // console.log(archivedDetails);
     const userRole = usePage().props.auth?.user?.role;
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [reason, setReason] = useState("");
     const [status, setStatus] = useState("");
     const [condition, setCondition] = useState("");
+    const [selectedArchivedDetail, setSelectedArchivedDetail] = useState(null);
+    const {
+        isOpen: isDetailOpen,
+        onOpen: onDetailOpen,
+        onClose: onDetailClose,
+    } = useDisclosure();
+
+    const viewAssetDetail = (assetNo) => {
+        // console.log(assetNo);
+        const detail = archivedDetails.find((d) => d.ASSETNO === assetNo);
+        if (detail?.archived_detail) {
+            setSelectedArchivedDetail(detail.archived_detail);
+            onDetailOpen();
+        } else {
+            toast.error("Archived detail not found.");
+        }
+    };
 
     const archiveAsset = (assetId, assetNo, reason, status, condition) => {
+        if (!reason || !status || !condition) {
+            toast.error("Please fill in all fields.");
+            return;
+        }
         router.post(
             route("assets.archive", { assetId, assetNo }),
             {
@@ -83,7 +104,7 @@ export default function AssetView() {
             auth={usePage().props.auth}
             errors={usePage().props.errors}
         >
-            <Head title={`Asset Details - ${asset.ASSETSID}`} />
+            <Head title={`Assets by ${asset.employee?.EMPLOYEENAME}`} />
             <div className="p-6">
                 <div className="my-6">
                     {userRole === "admin" && (
@@ -278,7 +299,7 @@ export default function AssetView() {
                                         <TableCell className="flex flex-col gap-1">
                                             {(userRole === "admin" && (
                                                 <Button
-                                                    color="success"
+                                                    color="primary"
                                                     size="sm"
                                                     onPress={() =>
                                                         restoreAsset(
@@ -291,6 +312,29 @@ export default function AssetView() {
                                                 </Button>
                                             )) ||
                                                 "--"}
+
+                                            <Button
+                                                color="success"
+                                                variant="flat"
+                                                size="sm"
+                                                onPress={() =>
+                                                    viewAssetDetail(
+                                                        detail.ASSETNO
+                                                    )
+                                                }
+                                                isDisabled={
+                                                    detail.archived_detail ===
+                                                    null
+                                                }
+                                                className={
+                                                    detail.archived_detail ===
+                                                    null
+                                                        ? "cursor-not-allowed"
+                                                        : ""
+                                                }
+                                            >
+                                                Details
+                                            </Button>
                                         </TableCell>
                                         <TableCell>
                                             {detail.SYSTEMASSETID}
@@ -383,6 +427,61 @@ export default function AssetView() {
                                 color="danger"
                                 variant="flat"
                                 onPress={onClose}
+                            >
+                                Close
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+
+                <Modal
+                    isOpen={isDetailOpen}
+                    onClose={onDetailClose}
+                    onOpenChange={onDetailClose}
+                >
+                    <ModalContent>
+                        <ModalHeader>Archived Details</ModalHeader>
+                        <ModalBody>
+                            <Input
+                                type="date"
+                                isReadOnly
+                                label="Date Archived"
+                                value={
+                                    selectedArchivedDetail?.created_at
+                                        ? new Date(
+                                              selectedArchivedDetail.created_at
+                                          )
+                                              .toISOString()
+                                              .split("T")[0]
+                                        : ""
+                                }
+                            />
+                            <Input
+                                isReadOnly
+                                label="Reason for Archiving"
+                                value={
+                                    selectedArchivedDetail?.archival_reason ||
+                                    ""
+                                }
+                            />
+                            <Textarea
+                                variant="faded"
+                                isReadOnly
+                                label="Asset Status"
+                                value={selectedArchivedDetail?.status || ""}
+                            />
+                            <Textarea
+                                variant="faded"
+                                isReadOnly
+                                label="Asset Condition"
+                                value={selectedArchivedDetail?.conditions || ""}
+                            />
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                color="danger"
+                                variant="flat"
+                                onPress={onDetailClose}
                             >
                                 Close
                             </Button>

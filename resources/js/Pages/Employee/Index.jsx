@@ -199,11 +199,15 @@ export default function Employees() {
                             className="cursor-pointer select-none"
                         >
                             EMPLOYEE NAME
-                            {sort === "name_asc"
+                            {/* {sort === "name_asc"
                                 ? " 🔼"
                                 : sort === "name_desc"
                                 ? " 🔽"
-                                : ""}
+                                : ""
+                                 } */}
+                            {sort === "name_asc" && " 🔼"}
+                            {sort === "name_desc" && " 🔽"}
+                            {!["name_asc", "name_desc"].includes(sort) && " ⏺️"}
                         </TableColumn>
                         <TableColumn>DEPARTMENT</TableColumn>
                         <TableColumn>LOCATION</TableColumn>
