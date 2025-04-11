@@ -32,7 +32,7 @@ export default function Assets() {
         issuedTos,
     } = usePage().props;
     // Get assets
-    console.log(assets);
+    // console.log(assets);
     const [search, setSearch] = useState(filters.search || "");
     const [sort, setSort] = useState(filters.sort || "");
     const [startDate, setStartDate] = useState(filters.start_date || "");
