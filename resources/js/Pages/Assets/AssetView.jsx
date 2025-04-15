@@ -28,6 +28,7 @@ export default function AssetView() {
     const { asset, archivedDetails } = usePage().props; // Get asset
     // const { data, setData } = useForm({});
     // console.log(archivedDetails);
+    // console.log('asset', asset);
     const userRole = usePage().props.auth?.user?.role;
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [reason, setReason] = useState("");
@@ -112,9 +113,9 @@ export default function AssetView() {
                             color="primary"
                             variant="flat"
                             as={Link}
-                            href={route("assets.index")}
+                            href={route("employees.index")}
                         >
-                            ← Back to Assets
+                            ← Back to Employees
                         </Button>
                     )}
                 </div>
@@ -172,26 +173,72 @@ export default function AssetView() {
                             }
                         >
                             <TableHeader>
-                                <TableColumn>Action</TableColumn>
+                                <TableColumn>Asset Number</TableColumn>
                                 <TableColumn>System Asset ID</TableColumn>
                                 <TableColumn>Description</TableColumn>
                                 <TableColumn>Model</TableColumn>
                                 <TableColumn>Serial No</TableColumn>
-                                <TableColumn>Serial Type</TableColumn>
-                                <TableColumn>Issued To</TableColumn>
+                                {/* <TableColumn>Serial Type</TableColumn> */}
+                                {/* <TableColumn>Issued To</TableColumn> */}
                                 <TableColumn>Date Issued</TableColumn>
                                 <TableColumn>Status</TableColumn>
                                 <TableColumn>Condition</TableColumn>
-                                <TableColumn>Asset From</TableColumn>
-                                <TableColumn>Type/Size</TableColumn>
-                                <TableColumn>Workstation</TableColumn>
-                                <TableColumn>With Components</TableColumn>
-                                <TableColumn>Components</TableColumn>
+                                {/* <TableColumn>Asset From</TableColumn>
+                                <TableColumn>Type/Size</TableColumn> */}
+                                {/* <TableColumn>Workstation</TableColumn> */}
+                                {/* <TableColumn>With Components</TableColumn>
+                                <TableColumn>Components</TableColumn> */}
+                                <TableColumn>Action</TableColumn>
                             </TableHeader>
                             <TableBody emptyContent={"No rows to display."}>
                                 {asset.asset_details.map((detail) => (
                                     <TableRow key={detail.ASSETNO}>
-                                        <TableCell className="flex flex-col gap-1">
+                                        <TableCell>
+                                            {detail.ASSETNUMBER}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.SYSTEMASSETID}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.DESCRIPTION}
+                                        </TableCell>
+                                        <TableCell>{detail.MODEL}</TableCell>
+                                        <TableCell>{detail.SERIALNO}</TableCell>
+                                        {/* <TableCell>
+                                            {detail.SERIALTYPE}
+                                        </TableCell> */}
+                                        {/* <TableCell>{detail.ISSUEDTO}</TableCell> */}
+                                        <TableCell>
+                                            {detail.DATEISSUUED
+                                                ? new Date(
+                                                      detail.DATEISSUUED
+                                                  ).toLocaleDateString()
+                                                : "--"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip>{detail.STATUS}</Chip>
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.CONDITIONS}
+                                        </TableCell>
+                                        {/* <TableCell>
+                                            {detail.ASSETFROM}
+                                        </TableCell>
+                                        <TableCell>{detail.TYPESIZE}</TableCell> */}
+                                        {/* <TableCell>
+                                            {
+                                                asset.employee?.workstation
+                                                    ?.WORKSTATION
+                                            }
+                                        </TableCell> */}
+
+                                        {/* <TableCell>
+                                            {detail.WITHCOMPONENTS}
+                                        </TableCell>
+                                        <TableCell>
+                                            {detail.COMPONENTS || "--"}
+                                        </TableCell> */}
+                                        <TableCell className="flex gap-1">
                                             {(userRole === "admin" && (
                                                 <>
                                                     <Button
@@ -221,12 +268,39 @@ export default function AssetView() {
                                                             onOpen();
                                                         }}
                                                     >
-                                                        Archive
+                                                        Dispose
                                                     </Button>
                                                 </>
                                             )) ||
                                                 "--"}
                                         </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Tab>
+                    <Tab key="asset-history" title="Asset History">
+                        <Table aria-label="Archived Assets table">
+                            <TableHeader>
+                                <TableColumn>System Asset ID</TableColumn>
+                                <TableColumn>Description</TableColumn>
+                                <TableColumn>Model</TableColumn>
+                                <TableColumn>Serial No</TableColumn>
+                                {/* <TableColumn>Serial Type</TableColumn>
+                                <TableColumn>Issued To</TableColumn> */}
+                                <TableColumn>Date Issued</TableColumn>
+                                <TableColumn>Status</TableColumn>
+                                <TableColumn>Condition</TableColumn>
+                                {/* <TableColumn>Asset From</TableColumn>
+                                <TableColumn>Type/Size</TableColumn>
+                                <TableColumn>Workstation</TableColumn>
+                                <TableColumn>With Components</TableColumn>
+                                <TableColumn>Components</TableColumn> */}
+                                <TableColumn>Action</TableColumn>
+                            </TableHeader>
+                            <TableBody emptyContent={"No rows to display."}>
+                                {archivedDetails.map((detail) => (
+                                    <TableRow key={detail.ASSETNO}>
                                         <TableCell>
                                             {detail.SYSTEMASSETID}
                                         </TableCell>
@@ -235,10 +309,10 @@ export default function AssetView() {
                                         </TableCell>
                                         <TableCell>{detail.MODEL}</TableCell>
                                         <TableCell>{detail.SERIALNO}</TableCell>
-                                        <TableCell>
+                                        {/* <TableCell>
                                             {detail.SERIALTYPE}
                                         </TableCell>
-                                        <TableCell>{detail.ISSUEDTO}</TableCell>
+                                        <TableCell>{detail.ISSUEDTO}</TableCell> */}
                                         <TableCell>
                                             {detail.DATEISSUUED
                                                 ? new Date(
@@ -252,51 +326,20 @@ export default function AssetView() {
                                         <TableCell>
                                             {detail.CONDITIONS}
                                         </TableCell>
-                                        <TableCell>
+                                        {/* <TableCell>
                                             {detail.ASSETFROM}
                                         </TableCell>
                                         <TableCell>{detail.TYPESIZE}</TableCell>
                                         <TableCell>
-                                            {
-                                                asset.employee?.workstation
-                                                    ?.WORKSTATION
-                                            }
+                                            {detail.WORKSTATION}
                                         </TableCell>
-
                                         <TableCell>
                                             {detail.WITHCOMPONENTS}
                                         </TableCell>
                                         <TableCell>
-                                            {detail.COMPONENTS || "--"}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Tab>
-                    <Tab key="asset-history" title="Asset History">
-                        <Table aria-label="Archived Assets table">
-                            <TableHeader>
-                                <TableColumn>Action</TableColumn>
-                                <TableColumn>System Asset ID</TableColumn>
-                                <TableColumn>Description</TableColumn>
-                                <TableColumn>Model</TableColumn>
-                                <TableColumn>Serial No</TableColumn>
-                                <TableColumn>Serial Type</TableColumn>
-                                <TableColumn>Issued To</TableColumn>
-                                <TableColumn>Date Issued</TableColumn>
-                                <TableColumn>Status</TableColumn>
-                                <TableColumn>Condition</TableColumn>
-                                <TableColumn>Asset From</TableColumn>
-                                <TableColumn>Type/Size</TableColumn>
-                                <TableColumn>Workstation</TableColumn>
-                                <TableColumn>With Components</TableColumn>
-                                <TableColumn>Components</TableColumn>
-                            </TableHeader>
-                            <TableBody emptyContent={"No rows to display."}>
-                                {archivedDetails.map((detail) => (
-                                    <TableRow key={detail.ASSETNO}>
-                                        <TableCell className="flex flex-col gap-1">
+                                            {detail.COMPONENTS}
+                                        </TableCell> */}
+                                        <TableCell className="flex gap-1">
                                             {(userRole === "admin" && (
                                                 <Button
                                                     color="primary"
@@ -336,44 +379,6 @@ export default function AssetView() {
                                                 Details
                                             </Button>
                                         </TableCell>
-                                        <TableCell>
-                                            {detail.SYSTEMASSETID}
-                                        </TableCell>
-                                        <TableCell>
-                                            {detail.DESCRIPTION}
-                                        </TableCell>
-                                        <TableCell>{detail.MODEL}</TableCell>
-                                        <TableCell>{detail.SERIALNO}</TableCell>
-                                        <TableCell>
-                                            {detail.SERIALTYPE}
-                                        </TableCell>
-                                        <TableCell>{detail.ISSUEDTO}</TableCell>
-                                        <TableCell>
-                                            {detail.DATEISSUUED
-                                                ? new Date(
-                                                      detail.DATEISSUUED
-                                                  ).toLocaleDateString()
-                                                : "--"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip>{detail.STATUS}</Chip>
-                                        </TableCell>
-                                        <TableCell>
-                                            {detail.CONDITIONS}
-                                        </TableCell>
-                                        <TableCell>
-                                            {detail.ASSETFROM}
-                                        </TableCell>
-                                        <TableCell>{detail.TYPESIZE}</TableCell>
-                                        <TableCell>
-                                            {detail.WORKSTATION}
-                                        </TableCell>
-                                        <TableCell>
-                                            {detail.WITHCOMPONENTS}
-                                        </TableCell>
-                                        <TableCell>
-                                            {detail.COMPONENTS}
-                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -384,12 +389,12 @@ export default function AssetView() {
                 <Modal isOpen={isOpen} onClose={onClose} onOpenChange={onClose}>
                     <ModalContent>
                         <ModalHeader>
-                            Are you sure you want to archive?
+                            Are you sure you want to dispose this asset?
                         </ModalHeader>
                         <ModalBody>
                             <Input
                                 isRequired
-                                label="Reason for Archiving"
+                                label="Reason for disposal"
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                             />
@@ -421,7 +426,7 @@ export default function AssetView() {
                                     )
                                 }
                             >
-                                Archive
+                                Confirm
                             </Button>
                             <Button
                                 color="danger"
@@ -440,12 +445,12 @@ export default function AssetView() {
                     onOpenChange={onDetailClose}
                 >
                     <ModalContent>
-                        <ModalHeader>Archived Details</ModalHeader>
+                        <ModalHeader>Asset Details</ModalHeader>
                         <ModalBody>
                             <Input
                                 type="date"
                                 isReadOnly
-                                label="Date Archived"
+                                label="Disposed Date"
                                 value={
                                     selectedArchivedDetail?.created_at
                                         ? new Date(
@@ -458,7 +463,7 @@ export default function AssetView() {
                             />
                             <Input
                                 isReadOnly
-                                label="Reason for Archiving"
+                                label="Reason for disposal"
                                 value={
                                     selectedArchivedDetail?.archival_reason ||
                                     ""

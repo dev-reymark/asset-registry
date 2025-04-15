@@ -108,16 +108,29 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         <strong>Asset ID:</strong>{" "}
                         {assetDetail?.ASSETID || "--"}
                     </p>
-                    <p>
+                    {/* <p>
                         <strong>Asset Number:</strong>{" "}
                         {assetDetail?.ASSETNO || "--"}
-                    </p>
+                    </p> */}
                     <p>
                         <strong>Asset Owner:</strong>{" "}
                         {employee?.EMPLOYEENAME || "--"}
                     </p>
                 </div>
                 <form onSubmit={handleSubmit}>
+                    {/* System Asset ID */}
+                    <label className="block text-sm font-medium text-gray-700">
+                        System Asset ID
+                    </label>
+                    <input
+                        type="text"
+                        value={data.SYSTEMASSETID}
+                        readOnly
+                        onChange={(e) =>
+                            setData("SYSTEMASSETID", e.target.value)
+                        }
+                        className="w-full border-gray-300 rounded-md p-2 mb-3"
+                    />
                     {/* Product Dropdown */}
                     <label className="block text-sm font-medium text-gray-700">
                         Product
@@ -172,7 +185,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                     />
 
                     {/* Issued To */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Issued To
                     </label>
                     <input
@@ -181,7 +194,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.ISSUEDTO}
                         onChange={(e) => setData("ISSUEDTO", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Date Issued */}
                     <label className="block text-sm font-medium text-gray-700">
@@ -195,7 +208,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                     />
 
                     {/* Image Path */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Image Path
                     </label>
                     <input
@@ -203,10 +216,10 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.IMAGEPATH}
                         onChange={(e) => setData("IMAGEPATH", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Serial Type */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Serial Type
                     </label>
                     <input
@@ -214,7 +227,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.SERIALTYPE}
                         onChange={(e) => setData("SERIALTYPE", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Status */}
                     <label className="block text-sm font-medium text-gray-700">
@@ -228,7 +241,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                     />
 
                     {/* Asset From */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Asset From
                     </label>
                     <input
@@ -236,7 +249,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.ASSETFROM}
                         onChange={(e) => setData("ASSETFROM", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Conditions */}
                     <label className="block text-sm font-medium text-gray-700">
@@ -250,7 +263,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                     />
 
                     {/* Workstation */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Workstation
                     </label>
                     <input
@@ -258,10 +271,10 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.WORKSTAION}
                         onChange={(e) => setData("WORKSTATION", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Type Size */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Type Size
                     </label>
                     <input
@@ -269,10 +282,10 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.TYPESIZE}
                         onChange={(e) => setData("TYPESIZE", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* No Print */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         No Print
                     </label>
                     <input
@@ -280,10 +293,10 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.NOPRINT}
                         onChange={(e) => setData("NOPRINT", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Component */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         Component
                     </label>
                     <input
@@ -291,10 +304,10 @@ export default function EditAsset({ assetDetail, products, employee }) {
                         value={data.COMPONENT}
                         onChange={(e) => setData("COMPONENT", e.target.value)}
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* With Components */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         With Components
                     </label>
                     <input
@@ -304,24 +317,10 @@ export default function EditAsset({ assetDetail, products, employee }) {
                             setData("WITHCOMPONENTS", e.target.value)
                         }
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
-
-                    {/* System Asset ID */}
-                    <label className="block text-sm font-medium text-gray-700">
-                        System Asset ID
-                    </label>
-                    <input
-                        type="text"
-                        value={data.SYSTEMASSETID}
-                        readOnly
-                        onChange={(e) =>
-                            setData("SYSTEMASSETID", e.target.value)
-                        }
-                        className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* System Component ID */}
-                    <label className="block text-sm font-medium text-gray-700">
+                    {/* <label className="block text-sm font-medium text-gray-700">
                         System Component ID
                     </label>
                     <input
@@ -331,7 +330,7 @@ export default function EditAsset({ assetDetail, products, employee }) {
                             setData("SYSTEMCOMPONENTID", e.target.value)
                         }
                         className="w-full border-gray-300 rounded-md p-2 mb-3"
-                    />
+                    /> */}
 
                     {/* Buttons */}
                     <div className="flex gap-4">

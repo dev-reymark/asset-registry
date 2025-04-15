@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 export default function AddAsset() {
     const { asset, products, assetno, workstations } = usePage().props;
     // console.log(workstations);
+    console.log(asset,products);
     const { data, setData, post, processing, errors } = useForm({
         ASSETSID: asset.ASSETSID,
         ASSETNO: assetno,
@@ -25,7 +26,7 @@ export default function AddAsset() {
         NOPRINT: "",
         COMPONENT: "",
         WITHCOMPONENTS: "",
-        SYSTEMASSETID: `${asset?.employee?.EMPLOYEEID}-${asset?.ASSETSID}-${assetno}`,
+        SYSTEMASSETID: `${asset?.employee?.EMPLOYEEID}-${products?.PRODUCTID}-${asset?.asset_details?.ASSETNUMBER}`,
         SYSTEMCOMPONENTID: "",
     });
 
@@ -110,132 +111,104 @@ export default function AddAsset() {
                         </p>
                     </div>
 
-                    {/* Product Selection Dropdown */}
                     <p>Please fill required fields.</p>
-                    <Select
-                        isRequired
-                        label="Product"
-                        value={data.PRODUCTID}
-                        onChange={handleProductChange}
-                    >
-                        <SelectItem value="">Select a product</SelectItem>
-                        {products.map((product) => (
-                            <SelectItem
-                                key={product.PRODUCTID}
-                                value={product.PRODUCTID}
-                            >
-                                {product.DESCRIPTION}
-                            </SelectItem>
-                        ))}
-                    </Select>
 
-                    {/* Description */}
-                    <Input
-                        label="Description"
-                        isRequired
-                        value={data.DESCRIPTION}
-                        onChange={(e) => setData("DESCRIPTION", e.target.value)}
-                        isReadOnly
-                    />
+                    <div className="w-full flex gap-4">
+                        {/* Product Selection Dropdown */}
+                        <Select
+                            isRequired
+                            label="Product"
+                            value={data.PRODUCTID}
+                            onChange={handleProductChange}
+                        >
+                            <SelectItem value="">Select a product</SelectItem>
+                            {products.map((product) => (
+                                <SelectItem
+                                    key={product.PRODUCTID}
+                                    value={product.PRODUCTID}
+                                >
+                                    {product.DESCRIPTION}
+                                </SelectItem>
+                            ))}
+                        </Select>
 
-                    {/* Model */}
-                    <Input
-                        label="Model"
-                        isRequired
-                        value={data.MODEL}
-                        onChange={(e) => setData("MODEL", e.target.value)}
-                    />
+                        {/* Description */}
+                        <Input
+                            label="Description"
+                            isRequired
+                            isReadOnly
+                            value={data.DESCRIPTION}
+                            onChange={(e) =>
+                                setData("DESCRIPTION", e.target.value)
+                            }
+                        />
+                    </div>
 
-                    {/* Serial No */}
-                    <Input
-                        description="Serial Number must be unique."
-                        label="Serial Number"
-                        isRequired
-                        value={data.SERIALNO}
-                        onChange={(e) => setData("SERIALNO", e.target.value)}
-                    />
+                    <div className="w-full flex gap-4">
+                        {/* System Asset ID */}
+                        <Input
+                            isRequired
+                            isReadOnly
+                            label="System Asset ID"
+                            value={data.SYSTEMASSETID}
+                            onChange={(e) =>
+                                setData("SYSTEMASSETID", e.target.value)
+                            }
+                            description="This will be generated automatically."
+                        />
 
-                    {/* Issued To */}
-                    <Input
-                        label="Issued To"
-                        isReadOnly
-                        isRequired
-                        value={data.ISSUEDTO}
-                        onChange={(e) => setData("ISSUEDTO", e.target.value)}
-                    />
+                        {/* Date Issued */}
+                        <Input
+                            label="Date Issued"
+                            type="date"
+                            isRequired
+                            value={data.DATEISSUUED}
+                            onChange={(e) =>
+                                setData("DATEISSUUED", e.target.value)
+                            }
+                        />
+                    </div>
 
-                    {/* Date Issued */}
-                    <Input
-                        label="Date Issued"
-                        type="date"
-                        isRequired
-                        value={data.DATEISSUUED}
-                        onChange={(e) => setData("DATEISSUUED", e.target.value)}
-                    />
+                    <div className="w-full flex gap-4">
+                        {/* Model */}
+                        <Input
+                            label="Model"
+                            isRequired
+                            value={data.MODEL}
+                            onChange={(e) => setData("MODEL", e.target.value)}
+                        />
 
-                    {/* Serial Type */}
-                    <Input
-                        type="number"
-                        label="Serial Type"
-                        isRequired
-                        value={data.SERIALTYPE}
-                        onChange={(e) => setData("SERIALTYPE", e.target.value)}
-                    />
+                        {/* Serial No */}
+                        <Input
+                            description="Serial Number must be unique."
+                            label="Serial Number"
+                            isRequired
+                            value={data.SERIALNO}
+                            onChange={(e) =>
+                                setData("SERIALNO", e.target.value)
+                            }
+                        />
+                    </div>
 
-                    {/* Status */}
-                    <Input
-                        isRequired
-                        label="Status"
-                        value={data.STATUS}
-                        onChange={(e) => setData("STATUS", e.target.value)}
-                    />
+                    <div className="w-full flex gap-4">
+                        {/* Status */}
+                        <Input
+                            isRequired
+                            label="Status"
+                            value={data.STATUS}
+                            onChange={(e) => setData("STATUS", e.target.value)}
+                        />
 
-                    {/* Asset From */}
-                    <Input
-                        isRequired
-                        label="Asset From"
-                        value={data.ASSETFROM}
-                        onChange={(e) => setData("ASSETFROM", e.target.value)}
-                    />
-
-                    {/* CONDITIONS */}
-                    <Input
-                        label="Conditions"
-                        isRequired
-                        value={data.CONDITIONS}
-                        onChange={(e) => setData("CONDITIONS", e.target.value)}
-                    />
-
-                    {/* Workstation Select */}
-                    <Select
-                        isRequired
-                        label="Workstation"
-                        value={data.WORKSTATION}
-                        onChange={(e) => setData("WORKSTATION", e.target.value)}
-                    >
-                        <SelectItem value="" disabled>
-                            Select Workstation
-                        </SelectItem>
-                        {asset?.employee?.workstation && (
-                            <SelectItem
-                                key={asset.employee.workstation.WORKSTATIONID}
-                                value={asset.employee.workstation.WORKSTATIONID}
-                            >
-                                {asset.employee.workstation.WORKSTATION}
-                            </SelectItem>
-                        )}
-                    </Select>
-
-                    {/* System Asset ID */}
-                    <Input
-                        isRequired
-                        isReadOnly
-                        label="System Asset ID"
-                        value={data.SYSTEMASSETID}
-                        onChange={(e) =>
-                            setData("SYSTEMASSETID", e.target.value)
-                        }
-                    />
+                        {/* CONDITIONS */}
+                        <Input
+                            label="Conditions"
+                            isRequired
+                            value={data.CONDITIONS}
+                            onChange={(e) =>
+                                setData("CONDITIONS", e.target.value)
+                            }
+                        />
+                    </div>
 
                     <div className="flex gap-2">
                         <Button

@@ -15,11 +15,18 @@ import {
     DropdownItem,
     DropdownSection,
     Checkbox,
+    useDisclosure,
+    Modal,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
 } from "@heroui/react";
 import { useState } from "react";
 import { useDebounce } from "../../hooks/useDebounce";
 import { CiCirclePlus, CiFilter, CiSearch } from "react-icons/ci";
 import { route } from "ziggy-js";
+import FilterDropdown from "../../Components/Assets/FilterDropdown";
 
 export default function Assets() {
     const {
@@ -32,7 +39,7 @@ export default function Assets() {
         issuedTos,
     } = usePage().props;
     // Get assets
-    // console.log(assets);
+    console.log(assets);
     const [search, setSearch] = useState(filters.search || "");
     const [sort, setSort] = useState(filters.sort || "");
     const [startDate, setStartDate] = useState(filters.start_date || "");
@@ -44,6 +51,8 @@ export default function Assets() {
     const [sortDirection, setSortDirection] = useState(
         filters.sort_direction || ""
     );
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const [selectedAsset, setSelectedAsset] = useState(null);
 
     const handleDateFilter = (start, end) => {
         router.get(
@@ -128,7 +137,7 @@ export default function Assets() {
                     <Input
                         isClearable
                         className="w-full sm:max-w-[44%]"
-                        placeholder="Search..."
+                        placeholder="Search by name, description, department..."
                         startContent={<CiSearch className="size-5" />}
                         value={search}
                         onClear={onClear}
@@ -210,10 +219,23 @@ export default function Assets() {
                     </div>
                 </div>
 
-                <Table aria-label="Employee Assets table" isStriped>
+                <Table
+                    selectionMode="multiple"
+                    aria-label="Employee Assets table"
+                    isStriped
+                    topContent={
+                        <div className="flex justify-start items-center mb-4 gap-2">
+                            <Button color="primary" as={Link}>
+                                Add New Asset
+                            </Button>
+                            <Button color="secondary" variant="flat" as={Link}>
+                                Transfer Asset
+                            </Button>
+                        </div>
+                    }
+                >
                     <TableHeader>
-                        <TableColumn>ASSET ID</TableColumn>
-                        <TableColumn>EMPLOYEE ID</TableColumn>
+                        <TableColumn>System Asset ID</TableColumn>
                         <TableColumn
                             onClick={toggleSort}
                             style={{ cursor: "pointer" }}
@@ -223,47 +245,20 @@ export default function Assets() {
                             {sort === "name_desc" && " 🔽"}
                             {!["name_asc", "name_desc"].includes(sort) && " ⏺️"}
                         </TableColumn>
-                        <TableColumn>Department</TableColumn>
-                        <TableColumn>Asset Location</TableColumn>
-                        <TableColumn>Workstation</TableColumn>
-                        <TableColumn>System Asset ID</TableColumn>
                         <TableColumn>Description</TableColumn>
                         <TableColumn>Model</TableColumn>
                         <TableColumn>Serial No</TableColumn>
-                        <TableColumn>Serial Type</TableColumn>
-                        <TableColumn>Issued To</TableColumn>
                         <TableColumn>Date Issued</TableColumn>
                         <TableColumn>Status</TableColumn>
-                        <TableColumn>Condition</TableColumn>
-                        <TableColumn>Asset From</TableColumn>
-                        <TableColumn>Type/Size</TableColumn>
-                        {/* <TableColumn>Workstation</TableColumn> */}
-                        <TableColumn>With Components</TableColumn>
-                        <TableColumn>Components</TableColumn>
+                        <TableColumn>Actions</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
                         {assets.map((asset) => (
                             <TableRow key={asset.ASSETSID}>
-                                <TableCell>{asset.ASSETSID}</TableCell>
-                                <TableCell>
-                                    {asset?.employee?.EMPLOYEEID || "--"}
-                                </TableCell>
-                                <TableCell>{asset.EMPLOYEENAME}</TableCell>
-                                <TableCell>
-                                    {
-                                        asset?.employee?.department
-                                            ?.DEPARTMENTNAME
-                                    }
-                                </TableCell>
-                                <TableCell>
-                                    {asset?.employee?.location?.LOCATIONNAME}
-                                </TableCell>
-                                <TableCell>
-                                    {asset?.employee?.workstation?.WORKSTATION}
-                                </TableCell>
                                 <TableCell>
                                     {asset.asset_details[0]?.SYSTEMASSETID}
                                 </TableCell>
+                                <TableCell>{asset.EMPLOYEENAME}</TableCell>
                                 <TableCell>
                                     {asset.asset_details[0]?.DESCRIPTION}
                                 </TableCell>
@@ -274,203 +269,118 @@ export default function Assets() {
                                     {asset.asset_details[0]?.SERIALNO}
                                 </TableCell>
                                 <TableCell>
-                                    {asset.asset_details[0]?.SERIALTYPE}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.ISSUEDTO}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.DATEISSUED}
+                                    {asset.asset_details[0]?.DATEISSUUED
+                                        ? new Date(
+                                              asset.asset_details[0].DATEISSUUED.trim()
+                                          ).toLocaleDateString()
+                                        : "--"}
                                 </TableCell>
                                 <TableCell>
                                     {asset.asset_details[0]?.STATUS}
                                 </TableCell>
                                 <TableCell>
-                                    {asset.asset_details[0]?.CONDITION}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.ASSETFROM}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.TYPE}
-                                </TableCell>
-                                {/* <TableCell>
-                                    {asset.employee?.workstation?.WORKSTATION}
-                                </TableCell> */}
-                                <TableCell>
-                                    {asset.asset_details[0]?.WITHCOMPONENTS}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.COMPONENTS}
+                                    <Button
+                                        color="success"
+                                        variant="flat"
+                                        onPress={() => {
+                                            setSelectedAsset(asset);
+                                            onOpen();
+                                        }}
+                                    >
+                                        View
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
+                <Modal
+                    isOpen={isOpen}
+                    placement="top-center"
+                    onOpenChange={(open) => {
+                        if (!open) setSelectedAsset(null);
+                        onOpenChange(open);
+                    }}
+                >
+                    <ModalContent>
+                        {(onClose) => (
+                            <>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    Assets Details
+                                </ModalHeader>
+                                <ModalBody>
+                                    {selectedAsset && (
+                                        <div>
+                                            <p>
+                                                Asset ID:{" "}
+                                                {selectedAsset.ASSETSID}
+                                            </p>
+                                            <p>
+                                                Employee Name:{" "}
+                                                {selectedAsset.EMPLOYEENAME}
+                                            </p>
+                                            <p>
+                                                Employee ID:{" "}
+                                                {
+                                                    selectedAsset.employee
+                                                        ?.EMPLOYEEID
+                                                }
+                                            </p>
+                                            <p>
+                                                Description:{" "}
+                                                {
+                                                    selectedAsset
+                                                        .asset_details[0]
+                                                        ?.DESCRIPTION
+                                                }
+                                            </p>
+                                            <p>
+                                                Serial Number:{" "}
+                                                {
+                                                    selectedAsset
+                                                        .asset_details[0]
+                                                        ?.SERIALNO
+                                                }
+                                            </p>
+                                            <p>
+                                                Date Issued:{" "}
+                                                {selectedAsset.asset_details[0]?.DATEISSUUED?.trim()}
+                                            </p>
+
+                                            <p>
+                                                Status:{" "}
+                                                {
+                                                    selectedAsset
+                                                        .asset_details[0]
+                                                        ?.STATUS
+                                                }
+                                            </p>
+                                            <p>
+                                                Condition:{" "}
+                                                {
+                                                    selectedAsset
+                                                        .asset_details[0]
+                                                        ?.CONDITION
+                                                }
+                                            </p>
+                                        </div>
+                                    )}
+                                </ModalBody>
+
+                                <ModalFooter>
+                                    <Button
+                                        color="danger"
+                                        variant="flat"
+                                        onPress={onClose}
+                                    >
+                                        Close
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
             </div>
         </Authenticated>
     );
 }
-
-const FilterDropdown = ({
-    statuses,
-    status,
-    setStatus,
-    descriptions,
-    description,
-    setDescription,
-    issuedTos,
-    issuedTo,
-    applyFilters,
-    setIssuedTo,
-}) => {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [statusOpen, setStatusOpen] = useState(false); // Toggle for Status filter
-    const [descriptionOpen, setDescriptionOpen] = useState(false); // Toggle for Description filter
-    const [issuedToOpen, setIssuedToOpen] = useState(false); // Toggle for Issued To filter
-
-    const handleDropdownToggle = () => {
-        setDropdownOpen(!dropdownOpen);
-    };
-
-    return (
-        <div className="relative">
-            {/* Button to trigger dropdown */}
-            <Button
-                color="primary"
-                isIconOnly
-                variant="flat"
-                onPress={handleDropdownToggle}
-            >
-                <CiFilter className="size-5" />
-            </Button>
-
-            {/* Dropdown Menu */}
-            {dropdownOpen && (
-                <div className="absolute top-12 bg-white border p-4 w-60 shadow-lg z-50">
-                    <form>
-                        {/* Status Filter */}
-                        <fieldset>
-                            <div className="flex justify-between">
-                                <legend>Status</legend>
-                                <Button
-                                    variant="light"
-                                    onPress={() => setStatusOpen(!statusOpen)} // Toggle Status filter visibility
-                                    isIconOnly
-                                >
-                                    <CiCirclePlus className="size-5" />
-                                </Button>
-                            </div>
-                            {statusOpen && // Show/Hide Status filter options
-                                (statuses || []).map((item) => (
-                                    <div key={item}>
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                checked={status === item}
-                                                onChange={() => {
-                                                    setStatus(item);
-                                                    applyFilters({
-                                                        status: item,
-                                                    });
-                                                }}
-                                            />
-                                            {item}
-                                        </label>
-                                    </div>
-                                ))}
-                        </fieldset>
-
-                        {/* Description Filter */}
-                        <fieldset className="mt-4">
-                            <div className="flex justify-between">
-                                <legend>Description</legend>
-                                <Button
-                                    variant="light"
-                                    onPress={() =>
-                                        setDescriptionOpen(!descriptionOpen)
-                                    } // Toggle Description filter visibility
-                                    isIconOnly
-                                >
-                                    <CiCirclePlus className="size-5" />
-                                </Button>
-                            </div>
-                            {descriptionOpen && // Show/Hide Description filter options
-                                (descriptions || []).map((item) => (
-                                    <div key={item}>
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                checked={description === item}
-                                                onChange={() => {
-                                                    setDescription(item);
-                                                    applyFilters({
-                                                        description: item,
-                                                    });
-                                                }}
-                                            />
-                                            {item}
-                                        </label>
-                                    </div>
-                                ))}
-                        </fieldset>
-
-                        {/* Issued To Filter */}
-                        <fieldset className="mt-4">
-                            <div className="flex justify-between">
-                                <legend>Issued To</legend>
-                                <Button
-                                    variant="light"
-                                    onPress={() =>
-                                        setIssuedToOpen(!issuedToOpen)
-                                    } // Toggle Issued To filter visibility
-                                    isIconOnly
-                                >
-                                    <CiCirclePlus className="size-5" />
-                                </Button>
-                            </div>
-                            {issuedToOpen && // Show/Hide Issued To filter options
-                                (issuedTos || []).map((item) => (
-                                    <div key={item}>
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                checked={issuedTo === item}
-                                                onChange={() => {
-                                                    setIssuedTo(item);
-                                                    applyFilters({
-                                                        issued_to: item,
-                                                    });
-                                                }}
-                                            />
-                                            {item}
-                                        </label>
-                                    </div>
-                                ))}
-                        </fieldset>
-
-                        {/* Clear Filters Button */}
-                        <div className="mt-4 text-center">
-                            <button
-                                type="button"
-                                className="text-red-500"
-                                onClick={() => {
-                                    setIssuedTo("");
-                                    setDescription("");
-                                    setStatus("");
-                                    applyFilters({
-                                        issued_to: "",
-                                        description: "",
-                                        status: "",
-                                    });
-                                }}
-                            >
-                                Clear Filters
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-        </div>
-    );
-};

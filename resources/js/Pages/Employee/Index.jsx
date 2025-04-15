@@ -275,7 +275,7 @@ export default function Employees() {
                                     >
                                         Archive
                                     </Button>
-                                    <Button
+                                    {/* <Button
                                         as={Link}
                                         className="w-full"
                                         size="sm"
@@ -286,7 +286,7 @@ export default function Employees() {
                                         )}
                                     >
                                         Grant Access
-                                    </Button>
+                                    </Button> */}
                                 </TableCell>
                             </TableRow>
                         ))}

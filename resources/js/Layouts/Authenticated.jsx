@@ -141,7 +141,7 @@ export default function Authenticated({ children }) {
                         <FaProductHunt className="w-5 h-5" />
                         <span className="ml-4">Products</span>
                     </Link>
-                    <Link
+                    {/* <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
                             url.startsWith("/workstations")
                                 ? "bg-indigo-600"
@@ -151,7 +151,7 @@ export default function Authenticated({ children }) {
                     >
                         <FaDesktop className="w-5 h-5" />
                         <span className="ml-4">Workstations</span>
-                    </Link>
+                    </Link> */}
                 </nav>
                 <div className="p-4">
                     <Button

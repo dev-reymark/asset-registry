@@ -36,6 +36,7 @@ class AssetDetail extends Model
         'SYSTEMASSETID',
         'SYSTEMCOMPONENTID',
         'archived',
+        'ASSETNUMBER'
     ];
 
     /**
@@ -66,7 +67,6 @@ class AssetDetail extends Model
      */
     public function archive($reason, $status, $conditions)
     {
-        // Store archival details
         ArchivedAssetDetail::create([
             'asset_detail_id' => $this->ASSETNO,
             'archival_reason' => $reason,
@@ -74,13 +74,45 @@ class AssetDetail extends Model
             'conditions' => $conditions,
         ]);
 
-        // Mark the asset as archived
         $this->archived = true;
         $this->save();
+
+        // Reorder active asset numbers
+        self::reorderAssetNumbersForEmployee($this->EMPLOYEEID);
     }
 
     public function archivedDetail()
     {
         return $this->hasOne(ArchivedAssetDetail::class, 'asset_detail_id', 'ASSETNO');
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($asset) {
+            $max = self::where('EMPLOYEEID', $asset->EMPLOYEEID)
+                ->where('archived', false)
+                ->max('ASSETNUMBER');
+
+            $asset->ASSETNUMBER = $max ? $max + 1 : 1;
+        });
+
+        static::deleted(function ($asset) {
+            // Reorder ASSETNUMBERs after deletion
+            self::reorderAssetNumbersForEmployee($asset->EMPLOYEEID);
+        });
+    }
+
+    protected static function reorderAssetNumbersForEmployee($employeeId)
+    {
+        $assets = self::where('EMPLOYEEID', $employeeId)
+            ->where('archived', false)
+            ->orderBy('ASSETNO')
+            ->get();
+
+        $i = 1;
+        foreach ($assets as $asset) {
+            $asset->ASSETNUMBER = $i++;
+            $asset->save();
+        }
     }
 }
