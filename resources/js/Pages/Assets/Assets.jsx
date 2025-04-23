@@ -21,16 +21,36 @@ import {
     ModalHeader,
     ModalBody,
     ModalFooter,
+    Image,
+    Chip,
+    Tooltip,
+    SelectItem,
+    Select,
 } from "@heroui/react";
 import { useState } from "react";
 import { useDebounce } from "../../hooks/useDebounce";
-import { CiCirclePlus, CiFilter, CiSearch } from "react-icons/ci";
+import { CiSearch } from "react-icons/ci";
 import { route } from "ziggy-js";
 import FilterDropdown from "../../Components/Assets/FilterDropdown";
+import { BsThreeDots } from "react-icons/bs";
+import toast from "react-hot-toast";
+import { Swiper, SwiperSlide } from "swiper/react";
+
+import "swiper/css";
+
+const statusColors = {
+    Active: "success",
+    Defective: "danger",
+    "For Aquisition": "warning",
+    "For Repair": "secondary",
+    "For Replacement": "primary",
+    Archived: "default",
+};
 
 export default function Assets() {
     const {
         assets,
+        location,
         title,
         desc,
         filters = {},
@@ -38,8 +58,6 @@ export default function Assets() {
         statuses,
         issuedTos,
     } = usePage().props;
-    // Get assets
-    console.log(assets);
     const [search, setSearch] = useState(filters.search || "");
     const [sort, setSort] = useState(filters.sort || "");
     const [startDate, setStartDate] = useState(filters.start_date || "");
@@ -53,6 +71,7 @@ export default function Assets() {
     );
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [selectedAsset, setSelectedAsset] = useState(null);
+    const [selectedKeys, setSelectedKeys] = useState(new Set());
 
     const handleDateFilter = (start, end) => {
         router.get(
@@ -122,6 +141,43 @@ export default function Assets() {
                 ...updated,
             },
             { preserveState: true, replace: true }
+        );
+    };
+
+    const {
+        isOpen: isTransferOpen,
+        onOpen: openTransferModal,
+        onOpenChange: onTransferOpenChange,
+    } = useDisclosure();
+
+    const [selectedLocationId, setSelectedLocationId] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleTransferAssets = (assetNos, locationId) => {
+        const assetNosAsIntegers = assetNos.map(Number);
+        setLoading(true);
+        router.post(
+            route("assetsextended.transfer"),
+            {
+                asset_nos: assetNosAsIntegers,
+                location_id: locationId,
+            },
+            {
+                preserveState: true,
+                replace: true,
+                onSuccess: () => {
+                    setSelectedKeys(new Set());
+                    setSelectedLocationId("");
+                    toast.success("Assets transferred successfully.");
+                },
+                onError: (errors) => {
+                    console.error("Transfer failed:", errors);
+                    toast.error("Failed to transfer assets.");
+                },
+                onFinish: () => {
+                    setLoading(false);
+                },
+            }
         );
     };
 
@@ -221,20 +277,32 @@ export default function Assets() {
 
                 <Table
                     selectionMode="multiple"
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={setSelectedKeys}
                     aria-label="Employee Assets table"
                     isStriped
                     topContent={
                         <div className="flex justify-start items-center mb-4 gap-2">
-                            <Button color="primary" as={Link}>
+                            <Button
+                                color="primary"
+                                as={Link}
+                                href={route("assetsextended.create")}
+                            >
                                 Add New Asset
                             </Button>
-                            <Button color="secondary" variant="flat" as={Link}>
+                            <Button
+                                color="success"
+                                variant="flat"
+                                onPress={openTransferModal}
+                                isDisabled={selectedKeys.size === 0}
+                            >
                                 Transfer Asset
                             </Button>
                         </div>
                     }
                 >
                     <TableHeader>
+                        <TableColumn>Asset #</TableColumn>
                         <TableColumn>System Asset ID</TableColumn>
                         <TableColumn
                             onClick={toggleSort}
@@ -248,54 +316,87 @@ export default function Assets() {
                         <TableColumn>Description</TableColumn>
                         <TableColumn>Model</TableColumn>
                         <TableColumn>Serial No</TableColumn>
+                        <TableColumn>Location</TableColumn>
                         <TableColumn>Date Issued</TableColumn>
                         <TableColumn>Status</TableColumn>
                         <TableColumn>Actions</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
-                        {assets.map((asset) => (
-                            <TableRow key={asset.ASSETSID}>
-                                <TableCell>
-                                    {asset.asset_details[0]?.SYSTEMASSETID}
-                                </TableCell>
-                                <TableCell>{asset.EMPLOYEENAME}</TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.DESCRIPTION}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.MODEL}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.SERIALNO}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.DATEISSUUED
-                                        ? new Date(
-                                              asset.asset_details[0].DATEISSUUED.trim()
-                                          ).toLocaleDateString()
-                                        : "--"}
-                                </TableCell>
-                                <TableCell>
-                                    {asset.asset_details[0]?.STATUS}
-                                </TableCell>
-                                <TableCell>
-                                    <Button
-                                        color="success"
-                                        variant="flat"
-                                        onPress={() => {
-                                            setSelectedAsset(asset);
-                                            onOpen();
-                                        }}
-                                    >
-                                        View
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {assets.map((asset) =>
+                            asset.asset_details.map((detail, index) => (
+                                <TableRow key={detail.ASSETNO}>
+                                    <TableCell>
+                                        {detail.ASSETNUMBER?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {detail.SYSTEMASSETID?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {asset.EMPLOYEENAME?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {detail.DESCRIPTION?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {detail.MODEL?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {detail.SERIALNO?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {detail?.location.LOCATIONNAME?.trim()}
+                                    </TableCell>
+                                    <TableCell>
+                                        {detail.DATEISSUUED
+                                            ? new Date(
+                                                  detail.DATEISSUUED.trim()
+                                              ).toLocaleDateString()
+                                            : "--"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            variant="flat"
+                                            color={
+                                                statusColors[
+                                                    detail.STATUS?.trim()
+                                                ] || "default"
+                                            }
+                                            radius="md"
+                                        >
+                                            {detail.STATUS?.trim()}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Tooltip
+                                            showArrow
+                                            // placement="right"
+                                            color="primary"
+                                            content="More"
+                                        >
+                                            <Button
+                                                // color="primary"
+                                                variant="light"
+                                                isIconOnly
+                                                onPress={() => {
+                                                    setSelectedAsset({
+                                                        ...asset,
+                                                        asset_details: [detail],
+                                                    });
+                                                    onOpen();
+                                                }}
+                                            >
+                                                <BsThreeDots size={20} />
+                                            </Button>
+                                        </Tooltip>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
                 <Modal
                     isOpen={isOpen}
+                    size="xl"
                     placement="top-center"
                     onOpenChange={(open) => {
                         if (!open) setSelectedAsset(null);
@@ -310,59 +411,108 @@ export default function Assets() {
                                 </ModalHeader>
                                 <ModalBody>
                                     {selectedAsset && (
-                                        <div>
-                                            <p>
-                                                Asset ID:{" "}
-                                                {selectedAsset.ASSETSID}
-                                            </p>
-                                            <p>
-                                                Employee Name:{" "}
-                                                {selectedAsset.EMPLOYEENAME}
-                                            </p>
-                                            <p>
-                                                Employee ID:{" "}
-                                                {
-                                                    selectedAsset.employee
-                                                        ?.EMPLOYEEID
-                                                }
-                                            </p>
-                                            <p>
-                                                Description:{" "}
-                                                {
-                                                    selectedAsset
-                                                        .asset_details[0]
-                                                        ?.DESCRIPTION
-                                                }
-                                            </p>
-                                            <p>
-                                                Serial Number:{" "}
-                                                {
-                                                    selectedAsset
-                                                        .asset_details[0]
-                                                        ?.SERIALNO
-                                                }
-                                            </p>
-                                            <p>
-                                                Date Issued:{" "}
-                                                {selectedAsset.asset_details[0]?.DATEISSUUED?.trim()}
-                                            </p>
+                                        <div className="flex flex-wrap gap-6">
+                                            <Swiper
+                                                spaceBetween={10}
+                                                slidesPerView={1}
+                                                className="w-full sm:w-1/2 lg:w-1/3"
+                                            >
+                                                {selectedAsset?.asset_details[0]
+                                                    ?.IMAGEPATH &&
+                                                    JSON.parse(
+                                                        selectedAsset
+                                                            .asset_details[0]
+                                                            .IMAGEPATH
+                                                    ).map((path, index) => (
+                                                        <SwiperSlide
+                                                            key={index}
+                                                        >
+                                                            <Image
+                                                                src={`/storage/${path}`}
+                                                                alt={`Asset Image ${
+                                                                    index + 1
+                                                                }`}
+                                                                className="object-cover"
+                                                                width={400}
+                                                                height={200}
+                                                                onError={(e) =>
+                                                                    (e.target.src =
+                                                                        "/assets/placeholder.jpg")
+                                                                }
+                                                            />
+                                                        </SwiperSlide>
+                                                    ))}
+                                            </Swiper>
 
-                                            <p>
-                                                Status:{" "}
-                                                {
-                                                    selectedAsset
-                                                        .asset_details[0]
-                                                        ?.STATUS
-                                                }
-                                            </p>
-                                            <p>
-                                                Condition:{" "}
-                                                {
-                                                    selectedAsset
-                                                        .asset_details[0]
-                                                        ?.CONDITION
-                                                }
-                                            </p>
+                                            <div className="flex-1 space-y-4 text-sm text-gray-700">
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Asset ID:
+                                                    </span>{" "}
+                                                    {selectedAsset.ASSETSID}
+                                                </p>
+                                                {/* <p>
+                                                    <span className="font-semibold">
+                                                        Issued To:
+                                                    </span>{" "}
+                                                    {selectedAsset.EMPLOYEENAME}
+                                                </p>
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Employee ID:
+                                                    </span>{" "}
+                                                    {
+                                                        selectedAsset.employee
+                                                            ?.EMPLOYEEID
+                                                    }
+                                                </p> */}
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Description:
+                                                    </span>{" "}
+                                                    {
+                                                        selectedAsset
+                                                            .asset_details[0]
+                                                            ?.DESCRIPTION
+                                                    }
+                                                </p>
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Serial Number:
+                                                    </span>{" "}
+                                                    {
+                                                        selectedAsset
+                                                            .asset_details[0]
+                                                            ?.SERIALNO
+                                                    }
+                                                </p>
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Date Issued:
+                                                    </span>{" "}
+                                                    {selectedAsset.asset_details[0]?.DATEISSUUED?.trim()}
+                                                </p>
+                                                {/* <p>
+                                                    <span className="font-semibold">
+                                                        Status:
+                                                    </span>{" "}
+                                                    {
+                                                        selectedAsset
+                                                            .asset_details[0]
+                                                            ?.STATUS
+                                                    }
+                                                </p> */}
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Condition:
+                                                    </span>{" "}
+                                                    {
+                                                        selectedAsset
+                                                            .asset_details[0]
+                                                            ?.CONDITIONS
+                                                    }
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
                                 </ModalBody>
@@ -374,6 +524,64 @@ export default function Assets() {
                                         onPress={onClose}
                                     >
                                         Close
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
+                <Modal
+                    isOpen={isTransferOpen}
+                    onOpenChange={onTransferOpenChange}
+                    size="md"
+                    placement="top-center"
+                >
+                    <ModalContent>
+                        {(onClose) => (
+                            <>
+                                <ModalHeader>Transfer Assets</ModalHeader>
+                                <ModalBody>
+                                    <Select
+                                        label="Select Location"
+                                        value={selectedLocationId}
+                                        onChange={(e) =>
+                                            setSelectedLocationId(
+                                                e.target.value
+                                            )
+                                        }
+                                    >
+                                        {location.map((location) => (
+                                            <SelectItem
+                                                key={location.LOCATIONID}
+                                                value={location.LOCATIONID}
+                                            >
+                                                {location.LOCATIONNAME}
+                                            </SelectItem>
+                                        ))}
+                                    </Select>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        color="danger"
+                                        variant="light"
+                                        onPress={onClose}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        color="primary"
+                                        onPress={() => {
+                                            handleTransferAssets(
+                                                Array.from(selectedKeys),
+                                                selectedLocationId
+                                            );
+                                            onClose();
+                                        }}
+                                        isDisabled={!selectedLocationId}
+                                    >
+                                        {loading
+                                            ? "Transferring..."
+                                            : "Transfer"}
                                     </Button>
                                 </ModalFooter>
                             </>

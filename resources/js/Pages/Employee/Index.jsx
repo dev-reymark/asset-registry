@@ -211,7 +211,7 @@ export default function Employees() {
                         </TableColumn>
                         <TableColumn>DEPARTMENT</TableColumn>
                         <TableColumn>LOCATION</TableColumn>
-                        <TableColumn>WORKSTATION</TableColumn>
+                        {/* <TableColumn>WORKSTATION</TableColumn> */}
                         <TableColumn>ACTION</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
@@ -227,9 +227,9 @@ export default function Employees() {
                                 <TableCell>
                                     {employee.location?.LOCATIONNAME}
                                 </TableCell>
-                                <TableCell>
+                                {/* <TableCell>
                                     {employee.workstation?.WORKSTATION}
-                                </TableCell>
+                                </TableCell> */}
                                 <TableCell className="flex gap-1">
                                     {/* <Button
                                         color="danger"

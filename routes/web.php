@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AssetComponentController;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssetExtendedController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
@@ -61,6 +62,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employee/{id}', [AssetController::class, 'generateEmployeeAssetReport'])
             ->name('employee.asset.report');
     });
+
+    // AssetExtended
+    Route::get('/create', [AssetExtendedController::class, 'create'])->name('assetsextended.create');
+    Route::post('/', [AssetExtendedController::class, 'store'])->name('assetsextended.store');
+    Route::post('/transfer', [AssetExtendedController::class, 'transfer'])->name('assetsextended.transfer');
+
 
     // Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['role:admin']);
     Route::resource('assetComponents', AssetComponentController::class)->middleware(['role:admin']);

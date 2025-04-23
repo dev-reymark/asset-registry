@@ -36,7 +36,8 @@ class AssetDetail extends Model
         'SYSTEMASSETID',
         'SYSTEMCOMPONENTID',
         'archived',
-        'ASSETNUMBER'
+        'ASSETNUMBER',
+        'LOCATIONID'
     ];
 
     /**
@@ -114,5 +115,10 @@ class AssetDetail extends Model
             $asset->ASSETNUMBER = $i++;
             $asset->save();
         }
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'LOCATIONID', 'LOCATIONID');
     }
 }

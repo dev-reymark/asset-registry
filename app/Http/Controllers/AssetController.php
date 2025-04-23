@@ -8,6 +8,7 @@ use App\Models\ArchivedAssetDetail;
 use App\Models\Asset;
 use App\Models\AssetDetail;
 use App\Models\Employee;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\WorkStation;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -79,8 +80,8 @@ class AssetController extends Controller
 
     public function index(Request $request): Response
     {
-        $query = Asset::with('assetDetails', 'employee.department', 'employee.location', 'employee.workstation')->active();
-
+        $query = Asset::with('assetDetails.location', 'employee.department', 'employee.location', 'employee.workstation')->active();
+        $location = Location::all();
         // Apply search filter if search query is provided
         if ($request->has('search') && $request->search !== '') {
             $query->where(function ($q) use ($request) {
@@ -141,6 +142,7 @@ class AssetController extends Controller
 
         return Inertia::render('Assets/Assets', [
             'assets' => $assets,
+            'location' => $location,
             'filters' => [
                 'search' => $request->search, // Make sure search is passed correctly
                 'sort' => $request->sort,

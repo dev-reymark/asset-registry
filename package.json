@@ -28,6 +28,7 @@
         "react-icons": "^5.5.0",
         "react-router-dom": "^7.4.0",
         "react-to-pdf": "^2.0.0",
+        "swiper": "^11.2.6",
         "ziggy-js": "^2.5.2"
     }
 }

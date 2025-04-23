@@ -76,17 +76,6 @@ export default function Authenticated({ children }) {
                 <nav className="flex flex-col flex-grow px-4 mt-5 space-y-1">
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                            url.startsWith("/employees")
-                                ? "bg-indigo-600"
-                                : "hover:bg-indigo-600"
-                        }`}
-                        href="/employees"
-                    >
-                        <IoPeopleCircleOutline className="w-5 h-5" />
-                        <span className="ml-4">Employees</span>
-                    </Link>
-                    <Link
-                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
                             route().current("assets.index")
                                 ? "bg-indigo-600"
                                 : "hover:bg-indigo-600"
@@ -95,6 +84,17 @@ export default function Authenticated({ children }) {
                     >
                         <FaBoxOpen className="w-5 h-5" />
                         <span className="ml-4">Assets</span>
+                    </Link>
+                    <Link
+                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
+                            url.startsWith("/employees")
+                                ? "bg-indigo-600"
+                                : "hover:bg-indigo-600"
+                        }`}
+                        href="/employees"
+                    >
+                        <IoPeopleCircleOutline className="w-5 h-5" />
+                        <span className="ml-4">Employees</span>
                     </Link>
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${

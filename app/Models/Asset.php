@@ -52,4 +52,9 @@ class Asset extends Model
     {
         return $query->where('archived', false);
     }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'LOCATIONID', 'LOCATIONID');
+    }
 }
