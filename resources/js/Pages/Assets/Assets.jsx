@@ -37,6 +37,7 @@ import toast from "react-hot-toast";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import "swiper/css";
+import { HiDotsVertical } from "react-icons/hi";
 
 const statusColors = {
     Active: "success",
@@ -318,8 +319,8 @@ export default function Assets() {
                         <TableColumn>Model</TableColumn>
                         <TableColumn>Serial No</TableColumn>
                         <TableColumn>Location</TableColumn>
-                        <TableColumn>Date Issued</TableColumn>
                         <TableColumn>Status</TableColumn>
+                        <TableColumn>Date Issued</TableColumn>
                         <TableColumn>Actions</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
@@ -348,13 +349,6 @@ export default function Assets() {
                                         {detail?.location.LOCATIONNAME?.trim()}
                                     </TableCell>
                                     <TableCell>
-                                        {detail.DATEISSUUED
-                                            ? new Date(
-                                                  detail.DATEISSUUED.trim()
-                                              ).toLocaleDateString()
-                                            : "--"}
-                                    </TableCell>
-                                    <TableCell>
                                         <Chip
                                             variant="flat"
                                             color={
@@ -368,7 +362,52 @@ export default function Assets() {
                                         </Chip>
                                     </TableCell>
                                     <TableCell>
-                                        <Tooltip
+                                        {detail.DATEISSUUED
+                                            ? new Date(
+                                                  detail.DATEISSUUED.trim()
+                                              ).toLocaleDateString()
+                                            : "--"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Dropdown>
+                                            <DropdownTrigger>
+                                                <Button
+                                                    isIconOnly
+                                                    size="sm"
+                                                    variant="light"
+                                                >
+                                                    <HiDotsVertical
+                                                        size={20}
+                                                        className="text-default-800"
+                                                    />
+                                                </Button>
+                                            </DropdownTrigger>
+                                            <DropdownMenu>
+                                                <DropdownItem
+                                                    key="view"
+                                                    onPress={() => {
+                                                        setSelectedAsset({
+                                                            ...asset,
+                                                            asset_details: [
+                                                                detail,
+                                                            ],
+                                                        });
+                                                        onOpen();
+                                                    }}
+                                                >
+                                                    View
+                                                </DropdownItem>
+
+                                                {/* <DropdownItem
+                                                    className="text-danger"
+                                                    color="danger"
+                                                    key="dispose"
+                                                >
+                                                    Dispose
+                                                </DropdownItem> */}
+                                            </DropdownMenu>
+                                        </Dropdown>
+                                        {/* <Tooltip
                                             showArrow
                                             // placement="right"
                                             color="primary"
@@ -388,7 +427,7 @@ export default function Assets() {
                                             >
                                                 <BsThreeDots size={20} />
                                             </Button>
-                                        </Tooltip>
+                                        </Tooltip> */}
                                     </TableCell>
                                 </TableRow>
                             ))

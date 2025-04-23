@@ -158,6 +158,7 @@ export default function Employees() {
                 </div>
 
                 <Table
+                    isVirtualized
                     aria-label="Employee Table"
                     className="mt-4"
                     isStriped
