@@ -276,6 +276,7 @@ export default function Assets() {
                 </div>
 
                 <Table
+                    isVirtualized
                     selectionMode="multiple"
                     selectedKeys={selectedKeys}
                     onSelectionChange={setSelectedKeys}
