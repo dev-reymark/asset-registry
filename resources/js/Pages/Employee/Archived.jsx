@@ -121,7 +121,7 @@ export default function ArchivedEmployees({ employees }) {
                         <TableColumn>EMPLOYEE NAME</TableColumn>
                         <TableColumn>DEPARTMENT</TableColumn>
                         <TableColumn>LOCATION</TableColumn>
-                        <TableColumn>WORKSTATION</TableColumn>
+                        {/* <TableColumn>WORKSTATION</TableColumn> */}
                         <TableColumn>ACTIONS</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No archived employees found."}>
@@ -136,12 +136,13 @@ export default function ArchivedEmployees({ employees }) {
                                 <TableCell>
                                     {employee.location?.LOCATIONNAME || "--"}
                                 </TableCell>
-                                <TableCell>
+                                {/* <TableCell>
                                     {employee.workstation?.WORKSTATION || "--"}
-                                </TableCell>
+                                </TableCell> */}
                                 <TableCell className="flex gap-2">
                                     <Button
                                         color="primary"
+                                        variant="flat"
                                         size="sm"
                                         as={Link}
                                         href={`/assets/${employee.EMPNO}`}
@@ -149,7 +150,8 @@ export default function ArchivedEmployees({ employees }) {
                                         View Assets
                                     </Button>
                                     <Button
-                                        color="success"
+                                        color="warning"
+                                        variant="flat"
                                         size="sm"
                                         onPress={() =>
                                             restoreEmployee(employee.EMPNO)

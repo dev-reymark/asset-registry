@@ -131,6 +131,11 @@ export default function Employees() {
                     loading: "Archiving employee...",
                     success: <b>Employee archived successfully!</b>,
                     error: <b>Failed to archive employee.</b>,
+                },
+                {
+                    duration: 5000,
+                    success: { duration: 5000 },
+                    error: { duration: 5000 },
                 }
             );
             router.reload();
@@ -213,7 +218,7 @@ export default function Employees() {
                         <TableColumn>DEPARTMENT</TableColumn>
                         <TableColumn>LOCATION</TableColumn>
                         {/* <TableColumn>WORKSTATION</TableColumn> */}
-                        <TableColumn>ACTION</TableColumn>
+                        <TableColumn>ACTIONS</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
                         {employees.map((employee) => (
@@ -244,17 +249,18 @@ export default function Employees() {
                                     <Button
                                         className="w-full"
                                         size="sm"
-                                        color="secondary"
+                                        color="primary"
                                         variant="flat"
                                         as={Link}
                                         href={`/assets/${employee.EMPNO}`}
                                     >
-                                        View Assets
+                                        Assets
                                     </Button>
                                     <Button
                                         className="w-full"
                                         size="sm"
                                         color="success"
+                                        variant="flat"
                                         as={Link}
                                         href={route(
                                             "employees.edit",
@@ -266,6 +272,7 @@ export default function Employees() {
                                     <Button
                                         className="w-full"
                                         size="sm"
+                                        variant="flat"
                                         color="warning"
                                         onPress={() =>
                                             confirmArchive(

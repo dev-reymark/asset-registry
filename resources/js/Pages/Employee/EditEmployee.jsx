@@ -12,7 +12,7 @@ export default function EditEmployee() {
         EMPLOYEENAME: employee.EMPLOYEENAME,
         DEPARTMENT: employee.DEPARTMENT,
         LOCATION: employee.LOCATION,
-        WORKSTATION: employee.WORKSTATION,
+        WORKSTATION: "",
     });
 
     const handleSubmit = (e) => {
@@ -27,7 +27,7 @@ export default function EditEmployee() {
                 EMPLOYEENAME: data.EMPLOYEENAME,
                 DEPARTMENT: data.DEPARTMENT,
                 LOCATION: data.LOCATION,
-                WORKSTATION: data.WORKSTATION,
+                WORKSTATION: null,
             })
             .then((response) => {
                 router.visit(route("employees.index"));
@@ -114,7 +114,7 @@ export default function EditEmployee() {
                         ))}
                     </Select>
 
-                    <Select
+                    {/* <Select
                         isRequired
                         label="Workstation"
                         value={data.WORKSTATION}
@@ -129,7 +129,7 @@ export default function EditEmployee() {
                                 {workstation.WORKSTATION}
                             </SelectItem>
                         ))}
-                    </Select>
+                    </Select> */}
 
                     <div className="flex gap-2 mt-4">
                         <Button

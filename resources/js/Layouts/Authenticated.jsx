@@ -40,12 +40,12 @@ export default function Authenticated({ children }) {
             {/* Mobile Menu Button */}
             <Button
                 color="primary"
-                variant="flat"
+                variant="light"
                 onPress={() => setIsSidebarOpen(true)}
                 className="md:hidden absolute top-4 left-4 z-50"
                 isIconOnly
             >
-                <RxDashboard className="w-8 h-8" />
+                <RxDashboard className="size-8" />
             </Button>
 
             {/* Sidebar */}

@@ -91,14 +91,14 @@ export default function Home() {
 
                 <Card
                     as={Link}
-                    href="/employees"
+                    href={route("assets.index")}
                     isFooterBlurred
                     isPressable
                     className="w-full h-[200px] col-span-12 sm:col-span-5 flex flex-col justify-center items-center"
                 >
                     <div className="p-4 flex flex-col justify-center items-center gap-3 text-center">
                         <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                            VIEW EMPLOYEES
+                            VIEW ASSETS
                         </h3>
                         <div className="flex justify-center items-center size-14 bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
                             <IoPeopleCircleOutline className="w-10 h-10" />

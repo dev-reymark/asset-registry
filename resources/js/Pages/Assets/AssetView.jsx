@@ -24,6 +24,15 @@ import toast from "react-hot-toast";
 import { route } from "ziggy-js";
 import { useState } from "react";
 
+const statusColors = {
+    Active: "success",
+    Defective: "danger",
+    "For Aquisition": "warning",
+    "For Repair": "secondary",
+    "For Replacement": "primary",
+    Archived: "default",
+};
+
 export default function AssetView() {
     const { asset, archivedDetails } = usePage().props; // Get asset
     // const { data, setData } = useForm({});
@@ -138,15 +147,16 @@ export default function AssetView() {
                     </p>
                 </div>
 
-                <Tabs aria-label="Assets Tabs" color="secondary">
-                    <Tab key="employee-assets" title="Employee Assets">
+                <Tabs aria-label="Assets Tabs" color="primary">
+                    <Tab key="employee-assets" title="Assets">
                         <Table
+                            isVirtualized
                             aria-label="Asset Details table"
                             isStriped
                             topContent={
                                 userRole === "admin" && (
-                                    <div className="flex justify-start items-center gap-2">
-                                        <Button
+                                    <div className="flex justify-start items-center gap-2 mb-3">
+                                        {/* <Button
                                             color="primary"
                                             as={Link}
                                             href={route("assets.create", {
@@ -154,7 +164,7 @@ export default function AssetView() {
                                             })}
                                         >
                                             Add New Asset
-                                        </Button>
+                                        </Button> */}
                                         <Button
                                             as={Link}
                                             color="success"
@@ -188,7 +198,7 @@ export default function AssetView() {
                                 {/* <TableColumn>Workstation</TableColumn> */}
                                 {/* <TableColumn>With Components</TableColumn>
                                 <TableColumn>Components</TableColumn> */}
-                                <TableColumn>Action</TableColumn>
+                                <TableColumn>Actions</TableColumn>
                             </TableHeader>
                             <TableBody emptyContent={"No rows to display."}>
                                 {asset.asset_details.map((detail) => (
@@ -216,7 +226,17 @@ export default function AssetView() {
                                                 : "--"}
                                         </TableCell>
                                         <TableCell>
-                                            <Chip>{detail.STATUS}</Chip>
+                                            <Chip
+                                                color={
+                                                    statusColors[
+                                                        detail.STATUS?.trim()
+                                                    ] || "default"
+                                                }
+                                                variant="dot"
+                                                className="capitalize border-none gap-1 text-default-600"
+                                            >
+                                                {detail.STATUS}
+                                            </Chip>
                                         </TableCell>
                                         <TableCell>
                                             {detail.CONDITIONS}
@@ -238,10 +258,10 @@ export default function AssetView() {
                                         <TableCell>
                                             {detail.COMPONENTS || "--"}
                                         </TableCell> */}
-                                        <TableCell className="flex gap-1">
+                                        <TableCell>
                                             {(userRole === "admin" && (
                                                 <>
-                                                    <Button
+                                                    {/* <Button
                                                         as={Link}
                                                         href={route(
                                                             "assets.edit",
@@ -256,10 +276,11 @@ export default function AssetView() {
                                                         size="sm"
                                                     >
                                                         Update
-                                                    </Button>
+                                                    </Button> */}
                                                     <Button
                                                         color="warning"
                                                         size="sm"
+                                                        variant="flat"
                                                         onPress={() => {
                                                             // Open modal
                                                             setReason("");
@@ -279,7 +300,7 @@ export default function AssetView() {
                             </TableBody>
                         </Table>
                     </Tab>
-                    <Tab key="asset-history" title="Asset History">
+                    <Tab key="asset-history" title="History">
                         <Table aria-label="Archived Assets table">
                             <TableHeader>
                                 <TableColumn>System Asset ID</TableColumn>
@@ -321,7 +342,17 @@ export default function AssetView() {
                                                 : "--"}
                                         </TableCell>
                                         <TableCell>
-                                            <Chip>{detail.STATUS}</Chip>
+                                            <Chip
+                                                className="capitalize border-none gap-1 text-default-600"
+                                                color={
+                                                    statusColors[
+                                                        detail.STATUS?.trim()
+                                                    ] || "default"
+                                                }
+                                                variant="dot"
+                                            >
+                                                {detail.STATUS}
+                                            </Chip>
                                         </TableCell>
                                         <TableCell>
                                             {detail.CONDITIONS}
@@ -342,7 +373,8 @@ export default function AssetView() {
                                         <TableCell className="flex gap-1">
                                             {(userRole === "admin" && (
                                                 <Button
-                                                    color="primary"
+                                                    color="warning"
+                                                    variant="flat"
                                                     size="sm"
                                                     onPress={() =>
                                                         restoreAsset(
@@ -376,7 +408,7 @@ export default function AssetView() {
                                                         : ""
                                                 }
                                             >
-                                                Details
+                                                View
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -388,7 +420,7 @@ export default function AssetView() {
 
                 <Modal isOpen={isOpen} onClose={onClose} onOpenChange={onClose}>
                     <ModalContent>
-                        <ModalHeader>
+                        <ModalHeader className="text-danger-500">
                             Are you sure you want to dispose this asset?
                         </ModalHeader>
                         <ModalBody>
@@ -430,7 +462,7 @@ export default function AssetView() {
                             </Button>
                             <Button
                                 color="danger"
-                                variant="flat"
+                                variant="light"
                                 onPress={onClose}
                             >
                                 Close

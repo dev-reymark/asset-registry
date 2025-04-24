@@ -68,63 +68,66 @@ export default function AddEmployee() {
                             value={data.EMPNO}
                             onChange={(e) => setData("EMPNO", e.target.value)}
                         /> */}
-                    <Input
-                        isRequired
-                        label="Employee ID"
-                        value={data.EMPLOYEEID}
-                        onChange={(e) => setData("EMPLOYEEID", e.target.value)}
-                    />
-                    <Input
-                        isRequired
-                        label="Employee Name"
-                        value={data.EMPLOYEENAME}
-                        onChange={(e) =>
-                            setData("EMPLOYEENAME", e.target.value)
-                        }
-                    />
+                    <div className="w-full flex gap-2">
+                        <Input
+                            isRequired
+                            label="Employee ID"
+                            value={data.EMPLOYEEID}
+                            onChange={(e) =>
+                                setData("EMPLOYEEID", e.target.value)
+                            }
+                        />
+                        <Input
+                            isRequired
+                            label="Employee Name"
+                            value={data.EMPLOYEENAME}
+                            onChange={(e) =>
+                                setData("EMPLOYEENAME", e.target.value)
+                            }
+                        />
+                    </div>
 
-                    {/* Department Select */}
-                    <Select
-                        isRequired
-                        label="Department"
-                        value={data.DEPARTMENT}
-                        onChange={(e) => setData("DEPARTMENT", e.target.value)}
-                    >
-                        <SelectItem value="" disabled>
-                            Select Department
-                        </SelectItem>
-                        {departments.map((department) => (
-                            <SelectItem
-                                key={department.DEPARTMETID}
-                                value={department.DEPARTMETID}
-                            >
-                                {department.DEPARTMENTNAME}
-                            </SelectItem>
-                        ))}
-                    </Select>
+                    <div className="w-full flex gap-2">
+                        {/* Department Select */}
+                        <Select
+                            isRequired
+                            label="Department"
+                            value={data.DEPARTMENT}
+                            onChange={(e) =>
+                                setData("DEPARTMENT", e.target.value)
+                            }
+                        >
+                            {departments.map((department) => (
+                                <SelectItem
+                                    key={department.DEPARTMETID}
+                                    value={department.DEPARTMETID}
+                                >
+                                    {department.DEPARTMENTNAME}
+                                </SelectItem>
+                            ))}
+                        </Select>
 
-                    {/* Location Select */}
-                    <Select
-                        isRequired
-                        label="Location"
-                        value={data.LOCATION}
-                        onChange={(e) => setData("LOCATION", e.target.value)}
-                    >
-                        <SelectItem value="" disabled>
-                            Select Location
-                        </SelectItem>
-                        {locations.map((location) => (
-                            <SelectItem
-                                key={location.LOCATIONID}
-                                value={location.LOCATIONID}
-                            >
-                                {location.LOCATIONNAME}
-                            </SelectItem>
-                        ))}
-                    </Select>
-
+                        {/* Location Select */}
+                        <Select
+                            isRequired
+                            label="Location"
+                            value={data.LOCATION}
+                            onChange={(e) =>
+                                setData("LOCATION", e.target.value)
+                            }
+                        >
+                            {locations.map((location) => (
+                                <SelectItem
+                                    key={location.LOCATIONID}
+                                    value={location.LOCATIONID}
+                                >
+                                    {location.LOCATIONNAME}
+                                </SelectItem>
+                            ))}
+                        </Select>
+                    </div>
                     {/* Workstation Select */}
-                    <Select
+                    {/* <Select
                         isRequired
                         label="Workstation"
                         value={data.WORKSTATION}
@@ -141,7 +144,7 @@ export default function AddEmployee() {
                                 {workstation.WORKSTATION}
                             </SelectItem>
                         ))}
-                    </Select>
+                    </Select> */}
 
                     <div className="flex gap-2 mt-4">
                         <Button

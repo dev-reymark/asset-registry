@@ -121,4 +121,18 @@ class AssetDetail extends Model
     {
         return $this->belongsTo(Location::class, 'LOCATIONID', 'LOCATIONID');
     }
+
+    public function restore()
+    {
+        $this->archived = false;
+        $this->save();
+
+        // Remove the archive record
+        if ($this->archivedDetail) {
+            $this->archivedDetail->delete();
+        }
+
+        // Reorder the asset numbers again
+        self::reorderAssetNumbersForEmployee($this->EMPLOYEEID);
+    }
 }

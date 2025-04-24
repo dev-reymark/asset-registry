@@ -21,6 +21,7 @@ export default function Department() {
             <Head title="Departments" />
             <div className="p-6">
                 <Table
+                    isVirtualized
                     aria-label="Departments table"
                     isStriped
                     topContent={

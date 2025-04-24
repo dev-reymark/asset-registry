@@ -115,12 +115,15 @@ class EmployeeController extends Controller
             'EMPLOYEENAME' => 'required|string|max:255',
             'DEPARTMENT' => 'required|exists:Department,DEPARTMETID',
             'LOCATION' => 'required|exists:Location,LOCATIONID',
-            'WORKSTATION' => 'required|exists:WorkStation,WORKSTATIONID',
+            'WORKSTATION' => 'nullable|exists:WorkStation,WORKSTATIONID',
         ]);
 
         Employee::create($validated);
         // Log the creation of the employee
         Log::info('Employee created: ', $validated);
+
+        // $lastAsset = Asset::orderBy('ASSETSID', 'desc')->first();
+        // $nextAssetId = $lastAsset ? $lastAsset->ASSETSID + 1 : 1;
 
         // Save Employee details to Asset table
         Asset::create([
@@ -191,7 +194,7 @@ class EmployeeController extends Controller
             'EMPLOYEENAME' => 'required|string|max:255',
             'DEPARTMENT' => 'required|exists:department,DEPARTMETID',
             'LOCATION' => 'required|exists:location,LOCATIONID',
-            'WORKSTATION' => 'required|exists:workstation,WORKSTATIONID',
+            'WORKSTATION' => 'nullable|exists:workstation,WORKSTATIONID',
         ]);
 
         $employee = Employee::findOrFail($id);

@@ -4,6 +4,7 @@ import {
     Autocomplete,
     AutocompleteItem,
     Button,
+    Chip,
     Form,
     Input,
     Select,
@@ -37,10 +38,15 @@ export default function AddAsset() {
         title,
         description,
     } = usePage().props;
+    // console.log("Asset Data:", asset);
+    // console.log("Products Data:", products);
 
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [generatedSystemAssetId, setGeneratedSystemAssetId] = useState("");
+    const [componentChips, setComponentChips] = useState([]);
+    const [newComponent, setNewComponent] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const getNextAssetNumber = (employee) => {
         if (!employee || !employee.asset_details?.length) return 1;
@@ -77,13 +83,31 @@ export default function AddAsset() {
     useEffect(() => {
         if (selectedEmployee && selectedProduct) {
             const nextNumber = getNextAssetNumber(selectedEmployee);
+
             const employeeId =
                 selectedEmployee.employee?.EMPLOYEEID ||
                 selectedEmployee.EMPLOYEEID;
             const productId = selectedProduct.PRODUCTID;
-            const newId = `${employeeId}-${productId}-${nextNumber}`;
+
+            const componentId = selectedProduct.asset_component?.ASSETCOMPNETID;
+            const componentName =
+                selectedProduct.asset_component?.ASSETCOMPONENTNAME;
+
+            const newId = componentId
+                ? `${employeeId}-${productId}-${componentId}-${nextNumber}`
+                : `${employeeId}-${productId}-${nextNumber}`;
+
             setGeneratedSystemAssetId(newId);
             setData("SYSTEMASSETID", newId);
+            setData("SYSTEMCOMPONENTID", componentId || "");
+            setData("WITHCOMPONENTS", !!componentId);
+
+            // Add base component to chip display
+            if (componentName) {
+                setComponentChips([componentName]);
+            } else {
+                setComponentChips([]);
+            }
         }
     }, [selectedEmployee, selectedProduct]);
 
@@ -104,30 +128,76 @@ export default function AddAsset() {
         const product = products.find(
             (p) => String(p.PRODUCTID) === String(selectedProductId)
         );
+
         setSelectedProduct(product);
         setData("PRODUCTID", selectedProductId);
         setData("DESCRIPTION", product?.DESCRIPTION?.trim() || "");
+
+        const componentName = product?.asset_component?.ASSETCOMPONENTNAME;
+        setComponentChips(componentName ? [componentName] : []);
+
         console.log("Selected Product:", product);
     };
 
     const handleStatusChange = (e) => setData("STATUS", e.target.value);
     const handleConditionChange = (e) => setData("CONDITIONS", e.target.value);
 
+    // const submit = async (e) => {
+    //     e.preventDefault();
+    //     setLoading(true);
+
+    //     // Ensure COMPONENT is updated before submit
+    //     setData("COMPONENT", JSON.stringify(componentChips));
+
+    //     try {
+    //         await post(route("assetsextended.store"), {
+    //             forceFormData: true,
+    //         });
+    //         toast.success("Asset added successfully");
+    //         router.visit(route("assets.index"));
+    //         setSelectedEmployee(null);
+    //         setSelectedProduct(null);
+    //         setGeneratedSystemAssetId("");
+    //     } catch (error) {
+    //         toast.error("An error occurred while adding the asset.");
+    //         console.error("Submit Error:", error);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
     const submit = async (e) => {
         e.preventDefault();
-        // console.log("Form Data Submitted:", data);
+        setLoading(true);
+
+        const trimmedChips = componentChips.map((c) => c.trim());
+
+        const updatedFormData = {
+            ...data,
+            COMPONENT: JSON.stringify(trimmedChips),
+        };
+
         try {
-            await post(route("assetsextended.store"), {
+            await router.post(route("assetsextended.store"), updatedFormData, {
                 forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Asset added successfully");
+                    router.visit(route("assets.index"));
+                    setSelectedEmployee(null);
+                    setSelectedProduct(null);
+                    setGeneratedSystemAssetId("");
+                },
+                onError: (err) => {
+                    console.error("Form Errors:", err);
+                    toast.error("An error occurred while adding the asset.");
+                },
             });
-            toast.success("Asset added successfully");
-            router.visit(route("assets.index"));
-            setSelectedEmployee(null);
-            setSelectedProduct(null);
-            setGeneratedSystemAssetId("");
         } catch (error) {
-            toast.error("An error occurred while adding the asset.");
+            toast.error("An unexpected error occurred.");
             console.error("Submit Error:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -135,10 +205,10 @@ export default function AddAsset() {
         <Authenticated>
             <Head title={title} />
 
-            <div className="my-4">
+            <div>
                 <Button
                     color="primary"
-                    variant="light"
+                    variant="flat"
                     as={Link}
                     href={route("assets.index")}
                 >
@@ -195,20 +265,63 @@ export default function AddAsset() {
                                 </SelectItem>
                             ))}
                         </Select>
+
                         <Input
                             label="Description"
                             isReadOnly
                             value={data.DESCRIPTION}
                         />
+
+                        <div className="flex gap-2 flex-wrap mt-2">
+                            {componentChips.map((comp, index) => (
+                                <Chip
+                                    key={index}
+                                    color="success"
+                                    variant="flat"
+                                    onClose={() =>
+                                        setComponentChips(
+                                            componentChips.filter(
+                                                (c) => c !== comp
+                                            )
+                                        )
+                                    }
+                                >
+                                    {comp}
+                                </Chip>
+                            ))}
+                        </div>
+                    </div>
+
+                    <Input
+                        label="New Components"
+                        value={newComponent}
+                        onChange={(e) => setNewComponent(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && newComponent.trim()) {
+                                e.preventDefault();
+                                if (
+                                    !componentChips.includes(
+                                        newComponent.trim()
+                                    )
+                                ) {
+                                    setComponentChips([
+                                        ...componentChips,
+                                        newComponent.trim(),
+                                    ]);
+                                    setNewComponent("");
+                                }
+                            }
+                        }}
+                        description="Want to add a new component? Press Enter to add."
+                    />
+
+                    <div className="w-full flex gap-4">
                         <Input
                             label="System Asset ID"
                             value={generatedSystemAssetId}
                             isReadOnly
                             description="Auto-generated"
                         />
-                    </div>
-
-                    <div className="w-full flex gap-4">
                         <Input
                             label="Model"
                             value={data.MODEL}
@@ -221,15 +334,6 @@ export default function AddAsset() {
                             value={data.SERIALNO}
                             onChange={(e) =>
                                 setData("SERIALNO", e.target.value)
-                            }
-                            isRequired
-                        />
-                        <Input
-                            label="Date Issued"
-                            type="date"
-                            value={data.DATEISSUUED}
-                            onChange={(e) =>
-                                setData("DATEISSUUED", e.target.value)
                             }
                             isRequired
                         />
@@ -279,7 +383,16 @@ export default function AddAsset() {
                         </Select>
                     </div>
 
-                    <div>
+                    <div className="w-full flex gap-4">
+                        <Input
+                            label="Date Issued"
+                            type="date"
+                            value={data.DATEISSUUED}
+                            onChange={(e) =>
+                                setData("DATEISSUUED", e.target.value)
+                            }
+                            isRequired
+                        />
                         <Input
                             label="Upload Images"
                             type="file"
@@ -295,9 +408,10 @@ export default function AddAsset() {
                         <Button
                             type="submit"
                             color="primary"
+                            isLoading={loading}
                             isDisabled={processing}
                         >
-                            {processing ? "Adding..." : "Add Asset"}
+                            {loading ? "Adding..." : "Add Asset"}
                         </Button>
                         <Button
                             type="button"

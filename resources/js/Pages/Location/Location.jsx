@@ -21,7 +21,8 @@ export default function Locations() {
 
                 {/* Location Table */}
                 <Table
-                isStriped
+                    isVirtualized
+                    isStriped
                     aria-label="Locations table"
                     className="mt-4"
                     topContent={

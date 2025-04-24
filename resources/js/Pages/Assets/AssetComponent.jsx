@@ -21,6 +21,7 @@ export default function AssetComponent() {
                 <h1 className="text-2xl font-bold mb-4">Asset Components</h1>
 
                 <Table
+                    isVirtualized
                     isStriped
                     aria-label="Asset Components table"
                     className="mt-4"

@@ -67,7 +67,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/create', [AssetExtendedController::class, 'create'])->name('assetsextended.create');
     Route::post('/', [AssetExtendedController::class, 'store'])->name('assetsextended.store');
     Route::post('/transfer', [AssetExtendedController::class, 'transfer'])->name('assetsextended.transfer');
-
+    Route::post('/assets/{assetNo}/archive', [AssetExtendedController::class, 'archive'])->name('assetsextended.archive');
+    Route::post('/assets/{assetNo}/restore', [AssetExtendedController::class, 'restore'])->name('assetsextended.restore');
+    Route::post('/assets/bulk-archive', [AssetExtendedController::class, 'bulkArchive'])->name('assetsextended.bulkArchive');
+    Route::get('/asset/{assetNo}/edit', [AssetExtendedController::class, 'edit'])->name('assetsextended.edit');
+    Route::put('/asset/{assetNo}', [AssetExtendedController::class, 'update'])->name('assetsextended.update');
 
     // Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['role:admin']);
     Route::resource('assetComponents', AssetComponentController::class)->middleware(['role:admin']);

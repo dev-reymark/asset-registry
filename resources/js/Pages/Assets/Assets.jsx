@@ -26,6 +26,9 @@ import {
     Tooltip,
     SelectItem,
     Select,
+    Textarea,
+    Tabs,
+    Tab,
 } from "@heroui/react";
 import { useState } from "react";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -38,6 +41,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import "swiper/css";
 import { HiDotsVertical } from "react-icons/hi";
+import { s } from "framer-motion/client";
 
 const statusColors = {
     Active: "success",
@@ -47,6 +51,14 @@ const statusColors = {
     "For Replacement": "primary",
     Archived: "default",
 };
+
+const newStatus = [
+    { label: "Active", value: "Active" },
+    { label: "Defective", value: "Defective" },
+    { label: "For Aquisition", value: "For Aquisition" },
+    { label: "For Repair", value: "For Repair" },
+    { label: "For Replacement", value: "For Replacement" },
+];
 
 export default function Assets() {
     const {
@@ -59,6 +71,7 @@ export default function Assets() {
         statuses,
         issuedTos,
     } = usePage().props;
+    console.log("assets", assets);
     const [search, setSearch] = useState(filters.search || "");
     const [sort, setSort] = useState(filters.sort || "");
     const [startDate, setStartDate] = useState(filters.start_date || "");
@@ -73,6 +86,7 @@ export default function Assets() {
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedKeys, setSelectedKeys] = useState(new Set());
+    const [statusToTransfer, setStatusToTransfer] = useState("");
 
     const handleDateFilter = (start, end) => {
         router.get(
@@ -162,6 +176,7 @@ export default function Assets() {
             {
                 asset_nos: assetNosAsIntegers,
                 location_id: locationId,
+                status: statusToTransfer,
             },
             {
                 preserveState: true,
@@ -169,6 +184,7 @@ export default function Assets() {
                 onSuccess: () => {
                     setSelectedKeys(new Set());
                     setSelectedLocationId("");
+                    setStatusToTransfer("");
                     toast.success("Assets transferred successfully.");
                 },
                 onError: (errors) => {
@@ -177,6 +193,108 @@ export default function Assets() {
                 },
                 onFinish: () => {
                     setLoading(false);
+                },
+            }
+        );
+    };
+
+    const {
+        isOpen: isArchiveOpen,
+        onOpen: openArchiveModal,
+        onOpenChange: onArchiveOpenChange,
+    } = useDisclosure();
+    const [reason, setReason] = useState("");
+    const [condition, setCondition] = useState("");
+    const [archiveLoading, setArchiveLoading] = useState(false);
+    const [statusToArchive, setStatusToArchive] = useState("");
+
+    const handleArchiveAssets = (assetNo) => {
+        setArchiveLoading(true);
+        router.post(
+            route("assetsextended.archive", { assetNo: assetNo }),
+            {
+                status: statusToArchive,
+                archival_reason: reason,
+                conditions: condition,
+            },
+            {
+                preserveState: true,
+                replace: true,
+                onSuccess: () => {
+                    setSelectedKeys(new Set());
+                    setStatusToArchive("");
+                    setReason("");
+                    setCondition("");
+                    toast.success("Assets archived successfully.");
+                },
+                onError: (errors) => {
+                    console.error("Archive failed:", errors);
+                    toast.error("Failed to archive assets.");
+                },
+                onFinish: () => {
+                    setArchiveLoading(false);
+                },
+            }
+        );
+    };
+
+    const handleRestoreAsset = (assetNo) => {
+        router.post(
+            route("assetsextended.restore", { assetNo }),
+            {},
+            {
+                preserveState: true,
+                replace: true,
+                onSuccess: () => {
+                    toast.success("Asset restored successfully.");
+                },
+                onError: (errors) => {
+                    console.error("Restore failed:", errors);
+                    toast.error("Failed to restore asset.");
+                },
+            }
+        );
+    };
+
+    const {
+        isOpen: isBulkArchiveOpen,
+        onOpen: openBulkArchiveModal,
+        onOpenChange: onBulkArchiveOpenChange,
+    } = useDisclosure();
+
+    const [bulkReason, setBulkReason] = useState("");
+    const [bulkCondition, setBulkCondition] = useState("");
+    const [bulkStatus, setBulkStatus] = useState("");
+    const [bulkLoading, setBulkLoading] = useState(false);
+
+    const handleBulkArchiveAssets = (assetNos) => {
+        const assetNosAsIntegers = assetNos.map(Number);
+        setBulkLoading(true);
+
+        router.post(
+            route("assetsextended.bulkArchive"),
+            {
+                asset_nos: assetNosAsIntegers,
+                archival_reason: bulkReason,
+                status: bulkStatus,
+                conditions: bulkCondition,
+            },
+            {
+                preserveState: true,
+                replace: true,
+                onSuccess: () => {
+                    setSelectedKeys(new Set());
+                    setBulkReason("");
+                    setBulkStatus("");
+                    setBulkCondition("");
+                    toast.success("Assets archived successfully.");
+                },
+                onError: (errors) => {
+                    console.error("Bulk archive failed:", errors);
+                    toast.error("Failed to archive assets.");
+                },
+                onFinish: () => {
+                    setBulkLoading(false);
                 },
             }
         );
@@ -194,7 +312,7 @@ export default function Assets() {
                     <Input
                         isClearable
                         className="w-full sm:max-w-[44%]"
-                        placeholder="Search by name, description, department..."
+                        placeholder="Search by name, description..."
                         startContent={<CiSearch className="size-5" />}
                         value={search}
                         onClear={onClear}
@@ -276,164 +394,358 @@ export default function Assets() {
                     </div>
                 </div>
 
-                <Table
-                    isVirtualized
-                    selectionMode="multiple"
-                    selectedKeys={selectedKeys}
-                    onSelectionChange={setSelectedKeys}
-                    aria-label="Employee Assets table"
-                    isStriped
-                    topContent={
-                        <div className="flex justify-start items-center mb-4 gap-2">
-                            <Button
-                                color="primary"
-                                as={Link}
-                                href={route("assetsextended.create")}
-                            >
-                                Add New Asset
-                            </Button>
-                            <Button
-                                color="success"
-                                variant="flat"
-                                onPress={openTransferModal}
-                                isDisabled={selectedKeys.size === 0}
-                            >
-                                Transfer Asset
-                            </Button>
-                        </div>
-                    }
-                >
-                    <TableHeader>
-                        <TableColumn>Asset #</TableColumn>
-                        <TableColumn>System Asset ID</TableColumn>
-                        <TableColumn
-                            onClick={toggleSort}
-                            style={{ cursor: "pointer" }}
-                        >
-                            EMPLOYEE NAME
-                            {sort === "name_asc" && " 🔼"}
-                            {sort === "name_desc" && " 🔽"}
-                            {!["name_asc", "name_desc"].includes(sort) && " ⏺️"}
-                        </TableColumn>
-                        <TableColumn>Description</TableColumn>
-                        <TableColumn>Model</TableColumn>
-                        <TableColumn>Serial No</TableColumn>
-                        <TableColumn>Location</TableColumn>
-                        <TableColumn>Status</TableColumn>
-                        <TableColumn>Date Issued</TableColumn>
-                        <TableColumn>Actions</TableColumn>
-                    </TableHeader>
-                    <TableBody emptyContent={"No rows to display."}>
-                        {assets.map((asset) =>
-                            asset.asset_details.map((detail, index) => (
-                                <TableRow key={detail.ASSETNO}>
-                                    <TableCell>
-                                        {detail.ASSETNUMBER?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        {detail.SYSTEMASSETID?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        {asset.EMPLOYEENAME?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        {detail.DESCRIPTION?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        {detail.MODEL?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        {detail.SERIALNO?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        {detail?.location.LOCATIONNAME?.trim()}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            variant="flat"
-                                            color={
-                                                statusColors[
-                                                    detail.STATUS?.trim()
-                                                ] || "default"
-                                            }
-                                            radius="md"
-                                        >
-                                            {detail.STATUS?.trim()}
-                                        </Chip>
-                                    </TableCell>
-                                    <TableCell>
-                                        {detail.DATEISSUUED
-                                            ? new Date(
-                                                  detail.DATEISSUUED.trim()
-                                              ).toLocaleDateString()
-                                            : "--"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Dropdown>
-                                            <DropdownTrigger>
-                                                <Button
-                                                    isIconOnly
-                                                    size="sm"
-                                                    variant="light"
-                                                >
-                                                    <HiDotsVertical
-                                                        size={20}
-                                                        className="text-default-800"
-                                                    />
-                                                </Button>
-                                            </DropdownTrigger>
-                                            <DropdownMenu>
-                                                <DropdownItem
-                                                    key="view"
-                                                    onPress={() => {
-                                                        setSelectedAsset({
-                                                            ...asset,
-                                                            asset_details: [
-                                                                detail,
-                                                            ],
-                                                        });
-                                                        onOpen();
-                                                    }}
-                                                >
-                                                    View
-                                                </DropdownItem>
-
-                                                {/* <DropdownItem
-                                                    className="text-danger"
-                                                    color="danger"
-                                                    key="dispose"
-                                                >
-                                                    Dispose
-                                                </DropdownItem> */}
-                                            </DropdownMenu>
-                                        </Dropdown>
-                                        {/* <Tooltip
-                                            showArrow
-                                            // placement="right"
+                <div className="flex w-full flex-col">
+                    <Tabs aria-label="Options">
+                        <Tab key="active" title="Active Assets">
+                            <Table
+                                isVirtualized
+                                maxTableHeight={"calc(100vh - 300px)"}
+                                selectionMode="multiple"
+                                selectedKeys={selectedKeys}
+                                onSelectionChange={setSelectedKeys}
+                                aria-label="Employee Assets table"
+                                isStriped
+                                topContent={
+                                    <div className="flex justify-start items-center mb-4 gap-2">
+                                        <Button
                                             color="primary"
-                                            content="More"
+                                            as={Link}
+                                            href={route(
+                                                "assetsextended.create"
+                                            )}
                                         >
-                                            <Button
-                                                // color="primary"
-                                                variant="light"
-                                                isIconOnly
-                                                onPress={() => {
-                                                    setSelectedAsset({
-                                                        ...asset,
-                                                        asset_details: [detail],
-                                                    });
-                                                    onOpen();
-                                                }}
-                                            >
-                                                <BsThreeDots size={20} />
-                                            </Button>
-                                        </Tooltip> */}
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                                            Add New Asset
+                                        </Button>
+                                        <Button
+                                            color="success"
+                                            variant="flat"
+                                            onPress={openTransferModal}
+                                            isDisabled={selectedKeys.size === 0}
+                                        >
+                                            Transfer Asset
+                                        </Button>
+                                        {/* <Button
+                                            color="danger"
+                                            variant="flat"
+                                            onPress={openBulkArchiveModal}
+                                            isDisabled={selectedKeys.size === 0}
+                                        >
+                                            Dispose Selected
+                                        </Button> */}
+                                    </div>
+                                }
+                            >
+                                <TableHeader>
+                                    <TableColumn>Asset #</TableColumn>
+                                    <TableColumn>System Asset ID</TableColumn>
+                                    <TableColumn>Description</TableColumn>
+                                    <TableColumn>Model</TableColumn>
+                                    <TableColumn>Serial No</TableColumn>
+                                    <TableColumn
+                                        onClick={toggleSort}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        EMPLOYEE
+                                        {sort === "name_asc" && " 🔼"}
+                                        {sort === "name_desc" && " 🔽"}
+                                        {!["name_asc", "name_desc"].includes(
+                                            sort
+                                        ) && " ⏺️"}
+                                    </TableColumn>
+                                    <TableColumn>Location</TableColumn>
+                                    <TableColumn>Status</TableColumn>
+                                    <TableColumn>Date Issued</TableColumn>
+                                    <TableColumn>Actions</TableColumn>
+                                </TableHeader>
+                                <TableBody emptyContent={"No rows to display."}>
+                                    {assets
+                                        .filter((asset) =>
+                                            asset.asset_details.some(
+                                                (detail) =>
+                                                    parseInt(
+                                                        detail.archived
+                                                    ) === 0 // Filter out assets that have archived detail
+                                            )
+                                        )
+                                        .map((asset) =>
+                                            asset.asset_details
+                                                .filter(
+                                                    (detail) =>
+                                                        parseInt(
+                                                            detail.archived
+                                                        ) === 0
+                                                ) // Ensure only active asset details are displayed
+                                                .map((detail, index) => (
+                                                    <TableRow
+                                                        key={detail.ASSETNO}
+                                                    >
+                                                        <TableCell>
+                                                            {detail.ASSETNUMBER?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.SYSTEMASSETID?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.DESCRIPTION?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.MODEL?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.SERIALNO?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {asset.EMPLOYEENAME?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail?.location.LOCATIONNAME?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                variant="flat"
+                                                                color={
+                                                                    statusColors[
+                                                                        detail.STATUS?.trim()
+                                                                    ] ||
+                                                                    "default"
+                                                                }
+                                                                radius="md"
+                                                            >
+                                                                {detail.STATUS?.trim()}
+                                                            </Chip>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.DATEISSUUED
+                                                                ? new Date(
+                                                                      detail.DATEISSUUED.trim()
+                                                                  ).toLocaleDateString()
+                                                                : "--"}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Dropdown>
+                                                                <DropdownTrigger>
+                                                                    <Button
+                                                                        isIconOnly
+                                                                        size="sm"
+                                                                        variant="light"
+                                                                    >
+                                                                        <HiDotsVertical
+                                                                            size={
+                                                                                20
+                                                                            }
+                                                                            className="text-default-800"
+                                                                        />
+                                                                    </Button>
+                                                                </DropdownTrigger>
+                                                                <DropdownMenu>
+                                                                    <DropdownItem
+                                                                        key="view"
+                                                                        onPress={() => {
+                                                                            setSelectedAsset(
+                                                                                {
+                                                                                    ...asset,
+                                                                                    asset_details:
+                                                                                        [
+                                                                                            detail,
+                                                                                        ],
+                                                                                }
+                                                                            );
+                                                                            onOpen();
+                                                                        }}
+                                                                    >
+                                                                        View
+                                                                    </DropdownItem>
+
+                                                                    <DropdownItem
+                                                                        as={
+                                                                            Link
+                                                                        }
+                                                                        href={route(
+                                                                            "assetsextended.edit",
+                                                                            detail.ASSETNO
+                                                                        )}
+                                                                        key="update"
+                                                                    >
+                                                                        Update
+                                                                    </DropdownItem>
+                                                                    <DropdownItem
+                                                                        className="text-danger"
+                                                                        color="danger"
+                                                                        key="dispose"
+                                                                        onPress={() => {
+                                                                            setSelectedAsset(
+                                                                                {
+                                                                                    ...asset,
+                                                                                    asset_details:
+                                                                                        [
+                                                                                            detail,
+                                                                                        ],
+                                                                                }
+                                                                            );
+                                                                            openArchiveModal();
+                                                                        }}
+                                                                    >
+                                                                        Dispose
+                                                                    </DropdownItem>
+                                                                </DropdownMenu>
+                                                            </Dropdown>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                        )}
+                                </TableBody>
+                            </Table>
+                        </Tab>
+                        <Tab key="archived" title="History">
+                            <Table
+                                isVirtualized
+                                // selectionMode="multiple"
+                                selectedKeys={selectedKeys}
+                                onSelectionChange={setSelectedKeys}
+                                aria-label="Employee Assets table"
+                                isStriped
+                            >
+                                <TableHeader>
+                                    <TableColumn>System Asset ID</TableColumn>
+                                    <TableColumn>Description</TableColumn>
+                                    <TableColumn>Model</TableColumn>
+                                    <TableColumn>Serial No</TableColumn>
+                                    <TableColumn
+                                        onClick={toggleSort}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        EMPLOYEE
+                                        {sort === "name_asc" && " 🔼"}
+                                        {sort === "name_desc" && " 🔽"}
+                                        {!["name_asc", "name_desc"].includes(
+                                            sort
+                                        ) && " ⏺️"}
+                                    </TableColumn>
+                                    <TableColumn>Location</TableColumn>
+                                    <TableColumn>Status</TableColumn>
+                                    <TableColumn>Date Issued</TableColumn>
+                                    <TableColumn>Actions</TableColumn>
+                                </TableHeader>
+                                <TableBody emptyContent={"No rows to display."}>
+                                    {assets
+                                        .filter((asset) =>
+                                            asset.asset_details.some(
+                                                (detail) =>
+                                                    parseInt(
+                                                        detail.archived.trim()
+                                                    ) === 1 // Check if any asset detail is archived
+                                            )
+                                        )
+                                        .map((asset) =>
+                                            asset.asset_details
+                                                .filter(
+                                                    (detail) =>
+                                                        parseInt(
+                                                            detail.archived.trim()
+                                                        ) === 1
+                                                ) // Filter only archived details
+                                                .map((detail, index) => (
+                                                    <TableRow
+                                                        key={detail.ASSETNO}
+                                                    >
+                                                        <TableCell>
+                                                            {detail.SYSTEMASSETID?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.DESCRIPTION?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.MODEL?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.SERIALNO?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {asset.EMPLOYEENAME?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail?.location.LOCATIONNAME?.trim()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                variant="flat"
+                                                                color={
+                                                                    statusColors[
+                                                                        detail.STATUS?.trim()
+                                                                    ] ||
+                                                                    "default"
+                                                                }
+                                                                radius="md"
+                                                            >
+                                                                {detail.STATUS?.trim()}
+                                                            </Chip>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detail.DATEISSUUED
+                                                                ? new Date(
+                                                                      detail.DATEISSUUED.trim()
+                                                                  ).toLocaleDateString()
+                                                                : "--"}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Dropdown>
+                                                                <DropdownTrigger>
+                                                                    <Button
+                                                                        isIconOnly
+                                                                        size="sm"
+                                                                        variant="light"
+                                                                    >
+                                                                        <HiDotsVertical
+                                                                            size={
+                                                                                20
+                                                                            }
+                                                                            className="text-default-800"
+                                                                        />
+                                                                    </Button>
+                                                                </DropdownTrigger>
+                                                                <DropdownMenu>
+                                                                    <DropdownItem
+                                                                        key="view"
+                                                                        onPress={() => {
+                                                                            setSelectedAsset(
+                                                                                {
+                                                                                    ...asset,
+                                                                                    asset_details:
+                                                                                        [
+                                                                                            detail,
+                                                                                        ],
+                                                                                }
+                                                                            );
+                                                                            onOpen();
+                                                                        }}
+                                                                    >
+                                                                        View
+                                                                    </DropdownItem>
+
+                                                                    <DropdownItem
+                                                                        color="warning"
+                                                                        className="text-warning-500"
+                                                                        key="restore"
+                                                                        onPress={() =>
+                                                                            handleRestoreAsset(
+                                                                                detail.ASSETNO
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Restore
+                                                                    </DropdownItem>
+                                                                </DropdownMenu>
+                                                            </Dropdown>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                        )}
+                                </TableBody>
+                            </Table>
+                        </Tab>
+                    </Tabs>
+                </div>
+
                 <Modal
                     isOpen={isOpen}
                     size="xl"
@@ -487,27 +799,6 @@ export default function Assets() {
                                             <div className="flex-1 space-y-4 text-sm text-gray-700">
                                                 <p>
                                                     <span className="font-semibold">
-                                                        Asset ID:
-                                                    </span>{" "}
-                                                    {selectedAsset.ASSETSID}
-                                                </p>
-                                                {/* <p>
-                                                    <span className="font-semibold">
-                                                        Issued To:
-                                                    </span>{" "}
-                                                    {selectedAsset.EMPLOYEENAME}
-                                                </p>
-                                                <p>
-                                                    <span className="font-semibold">
-                                                        Employee ID:
-                                                    </span>{" "}
-                                                    {
-                                                        selectedAsset.employee
-                                                            ?.EMPLOYEEID
-                                                    }
-                                                </p> */}
-                                                <p>
-                                                    <span className="font-semibold">
                                                         Description:
                                                     </span>{" "}
                                                     {
@@ -532,16 +823,6 @@ export default function Assets() {
                                                     </span>{" "}
                                                     {selectedAsset.asset_details[0]?.DATEISSUUED?.trim()}
                                                 </p>
-                                                {/* <p>
-                                                    <span className="font-semibold">
-                                                        Status:
-                                                    </span>{" "}
-                                                    {
-                                                        selectedAsset
-                                                            .asset_details[0]
-                                                            ?.STATUS
-                                                    }
-                                                </p> */}
                                                 <p>
                                                     <span className="font-semibold">
                                                         Condition:
@@ -552,11 +833,62 @@ export default function Assets() {
                                                             ?.CONDITIONS
                                                     }
                                                 </p>
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Components:
+                                                    </span>{" "}
+                                                    {selectedAsset
+                                                        ?.asset_details[0]
+                                                        ?.COMPONENT ? (
+                                                        <div className="flex gap-4 p-2">
+                                                            {(() => {
+                                                                try {
+                                                                    const components =
+                                                                        JSON.parse(
+                                                                            selectedAsset
+                                                                                .asset_details[0]
+                                                                                .COMPONENT
+                                                                        );
+                                                                    if (
+                                                                        Array.isArray(
+                                                                            components
+                                                                        )
+                                                                    ) {
+                                                                        return components.map(
+                                                                            (
+                                                                                component,
+                                                                                index
+                                                                            ) => (
+                                                                                <Chip
+                                                                                    variant="flat"
+                                                                                    color="primary"
+                                                                                    key={
+                                                                                        index
+                                                                                    }
+                                                                                    radius="full"
+                                                                                >
+                                                                                    {
+                                                                                        component
+                                                                                    }
+                                                                                </Chip>
+                                                                            )
+                                                                        );
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error(
+                                                                        "Error parsing COMPONENT:",
+                                                                        error
+                                                                    );
+                                                                }
+                                                                return null; // If parsing fails or COMPONENT is not an array
+                                                            })()}
+                                                        </div>
+                                                    ) : null}
+                                                </p>
                                             </div>
                                         </div>
                                     )}
                                 </ModalBody>
-
                                 <ModalFooter>
                                     <Button
                                         color="danger"
@@ -579,7 +911,15 @@ export default function Assets() {
                     <ModalContent>
                         {(onClose) => (
                             <>
-                                <ModalHeader>Transfer Assets</ModalHeader>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    <h1 className="text-lg font-semibold">
+                                        Transfer Assets
+                                    </h1>
+                                    <p className="text-sm text-gray-500">
+                                        Select a location to transfer the
+                                        selected assets.
+                                    </p>
+                                </ModalHeader>
                                 <ModalBody>
                                     <Select
                                         label="Select Location"
@@ -596,6 +936,22 @@ export default function Assets() {
                                                 value={location.LOCATIONID}
                                             >
                                                 {location.LOCATIONNAME}
+                                            </SelectItem>
+                                        ))}
+                                    </Select>
+                                    <Select
+                                        label="Select Status"
+                                        value={statusToTransfer}
+                                        onChange={(e) =>
+                                            setStatusToTransfer(e.target.value)
+                                        }
+                                    >
+                                        {newStatus.map((status) => (
+                                            <SelectItem
+                                                key={status.value}
+                                                value={status.value}
+                                            >
+                                                {status.label}
                                             </SelectItem>
                                         ))}
                                     </Select>
@@ -618,10 +974,166 @@ export default function Assets() {
                                             onClose();
                                         }}
                                         isDisabled={!selectedLocationId}
+                                        isLoading={loading}
                                     >
                                         {loading
                                             ? "Transferring..."
                                             : "Transfer"}
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
+                <Modal
+                    isOpen={isArchiveOpen}
+                    onOpenChange={onArchiveOpenChange}
+                    placement="top-center"
+                >
+                    <ModalContent>
+                        {(onClose) => (
+                            <>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    <h1 className="text-lg font-semibold text-danger-500">
+                                        Are you sure you want to dispose?
+                                    </h1>
+                                    <ModalBody className="">
+                                        <Textarea
+                                            isRequired
+                                            label="Reason for disposal"
+                                            value={reason}
+                                            onChange={(e) =>
+                                                setReason(e.target.value)
+                                            }
+                                        />
+                                        <Select
+                                            isRequired
+                                            variant="faded"
+                                            label="Select Status"
+                                            value={statusToArchive}
+                                            onChange={(e) =>
+                                                setStatusToArchive(
+                                                    e.target.value
+                                                )
+                                            }
+                                        >
+                                            {newStatus.map((status) => (
+                                                <SelectItem
+                                                    key={status.value}
+                                                    value={status.value}
+                                                >
+                                                    {status.label}
+                                                </SelectItem>
+                                            ))}
+                                        </Select>
+                                        <Textarea
+                                            variant="faded"
+                                            isRequired
+                                            label="Asset Condition"
+                                            value={condition}
+                                            onChange={(e) =>
+                                                setCondition(e.target.value)
+                                            }
+                                        />
+                                    </ModalBody>
+                                </ModalHeader>
+                                <ModalFooter>
+                                    <Button
+                                        color="danger"
+                                        variant="light"
+                                        onPress={onClose}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        color="primary"
+                                        onPress={() => {
+                                            handleArchiveAssets(
+                                                selectedAsset.asset_details.map(
+                                                    (detail) => detail.ASSETNO
+                                                )
+                                            );
+                                            onClose();
+                                        }}
+                                        isDisabled={!reason || !condition}
+                                        isLoading={archiveLoading}
+                                    >
+                                        {archiveLoading
+                                            ? "Disposing..."
+                                            : "Dispose"}
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
+
+                <Modal
+                    isOpen={isBulkArchiveOpen}
+                    onOpenChange={onBulkArchiveOpenChange}
+                >
+                    <ModalContent>
+                        {(onClose) => (
+                            <>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    Bulk Archive Selected Assets
+                                </ModalHeader>
+                                <ModalBody>
+                                    <Textarea
+                                        isRequired
+                                        label="Reason"
+                                        value={bulkReason}
+                                        onChange={(e) =>
+                                            setBulkReason(e.target.value)
+                                        }
+                                    />
+                                    <Select
+                                        label="Status"
+                                        value={bulkStatus}
+                                        onChange={(e) =>
+                                            setBulkStatus(e.target.value)
+                                        }
+                                    >
+                                        {newStatus.map((status) => (
+                                            <SelectItem
+                                                key={status.value}
+                                                value={status.value}
+                                            >
+                                                {status.label}
+                                            </SelectItem>
+                                        ))}
+                                    </Select>
+                                    <Textarea
+                                        isRequired
+                                        label="Condition"
+                                        value={bulkCondition}
+                                        onChange={(e) =>
+                                            setBulkCondition(e.target.value)
+                                        }
+                                    />
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button variant="light" onPress={onClose}>
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        color="danger"
+                                        onPress={() => {
+                                            handleBulkArchiveAssets(
+                                                Array.from(selectedKeys)
+                                            );
+                                            onClose();
+                                        }}
+                                        isDisabled={
+                                            !bulkReason ||
+                                            !bulkStatus ||
+                                            !bulkCondition
+                                        }
+                                        isLoading={bulkLoading}
+                                    >
+                                        {bulkLoading
+                                            ? "Disposing..."
+                                            : "Confirm Dispose"}
                                     </Button>
                                 </ModalFooter>
                             </>
