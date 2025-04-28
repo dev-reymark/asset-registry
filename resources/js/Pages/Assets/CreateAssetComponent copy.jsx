@@ -1,12 +1,13 @@
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
-import { Button, Form, Input } from "@heroui/react";
+import { Button, Form, Input, Select, SelectItem } from "@heroui/react";
 import toast from "react-hot-toast";
 import { route } from "ziggy-js";
 
-export default function CreateAssetComponent() {
+export default function CreateAssetComponent({ assetTypes }) {
     const { data, setData, post, processing, errors } = useForm({
         ASSETCOMPONENTNAME: "",
+        ASSETTYPEID: "",
     });
 
     const handleSubmit = async (e) => {
@@ -24,6 +25,21 @@ export default function CreateAssetComponent() {
         }
     };
 
+    const handleAssetTypeChange = (e) => {
+        const selectedTypeId = Number(e.target.value); // Convert to number
+        const selectedType = assetTypes.find(
+            (type) => type.ASSETTYPEID === selectedTypeId
+        );
+
+        setData({
+            ...data,
+            ASSETTYPEID: selectedTypeId,
+            ASSETCOMPONENTNAME: selectedType
+                ? `${selectedType.ASSETTYPE}-`
+                : "",
+        });
+    };
+
     return (
         <Authenticated>
             <Head title="Create Asset Component" />
@@ -35,11 +51,11 @@ export default function CreateAssetComponent() {
                         as={Link}
                         href={route("assetComponents.index")}
                     >
-                        ← Back
+                        ← Back to Asset Components
                     </Button>
                 </div>
                 <h1 className="text-2xl font-bold mb-4">
-                    Create Component
+                    Create Asset Component
                 </h1>
 
                 <Form
@@ -48,9 +64,28 @@ export default function CreateAssetComponent() {
                     validationErrors={errors}
                     onReset={() => setData({ ASSETCOMPONENTNAME: "" })}
                 >
+                    <Select
+                        label="Asset Type"
+                        isRequired
+                        id="ASSETTYPEID"
+                        name="ASSETTYPEID"
+                        value={data.ASSETTYPEID}
+                        onChange={handleAssetTypeChange}
+                    >
+                        <SelectItem value="">Select Asset Type</SelectItem>
+                        {assetTypes.map((type) => (
+                            <SelectItem
+                                key={type.ASSETTYPEID}
+                                value={type.ASSETTYPEID}
+                            >
+                                {type.ASSETTYPE}
+                            </SelectItem>
+                        ))}
+                    </Select>
+
                     <Input
                         isRequired
-                        label="Component Name"
+                        label="Asset Component Name"
                         id="ASSETCOMPONENTNAME"
                         name="ASSETCOMPONENTNAME"
                         value={data.ASSETCOMPONENTNAME}
@@ -67,7 +102,7 @@ export default function CreateAssetComponent() {
                         >
                             {processing
                                 ? "Creating..."
-                                : "Create"}
+                                : "Create Asset Component"}
                         </Button>
                         <Button
                             type="reset"

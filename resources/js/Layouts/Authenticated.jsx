@@ -118,18 +118,6 @@ export default function Authenticated({ children }) {
                         <FaMapMarkerAlt className="w-5 h-5" />
                         <span className="ml-4">Asset Location</span>
                     </Link>
-
-                    <Link
-                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                            route().current("assetComponents.index")
-                                ? "bg-indigo-600"
-                                : "hover:bg-indigo-600"
-                        }`}
-                        href={route("assetComponents.index")}
-                    >
-                        <BiSolidComponent className="w-5 h-5" />
-                        <span className="ml-4">Asset Component</span>
-                    </Link>
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
                             url.startsWith("/products")
@@ -140,6 +128,17 @@ export default function Authenticated({ children }) {
                     >
                         <FaProductHunt className="w-5 h-5" />
                         <span className="ml-4">Products</span>
+                    </Link>
+                    <Link
+                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
+                            route().current("assetComponents.index")
+                                ? "bg-indigo-600"
+                                : "hover:bg-indigo-600"
+                        }`}
+                        href={route("assetComponents.index")}
+                    >
+                        <BiSolidComponent className="w-5 h-5" />
+                        <span className="ml-4">Product Components</span>
                     </Link>
                     {/* <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${

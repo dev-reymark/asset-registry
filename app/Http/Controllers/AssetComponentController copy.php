@@ -13,12 +13,13 @@ class AssetComponentController extends Controller
 {
     public function index(): Response
     {
-        $assetComponents = AssetComponent::all();
+        // Eager load products and assetType
+        $assetComponents = AssetComponent::with('assetType')->get();
 
         return Inertia::render('Assets/AssetComponent', [
             'assetComponents' => $assetComponents,
-            'title' => 'Product Components',
-            'description' => 'List of product components',
+            'title' => 'Asset Component',
+            'description' => '',
         ]);
     }
 
@@ -26,10 +27,10 @@ class AssetComponentController extends Controller
     public function create(): Response
     {
         // Get all AssetTypes to display in the dropdown
-        // $assetTypes = AssetType::all();
+        $assetTypes = AssetType::all();
 
         return Inertia::render('Assets/CreateAssetComponent', [
-            // 'assetTypes' => $assetTypes,
+            'assetTypes' => $assetTypes,
         ]);
     }
 
@@ -38,7 +39,7 @@ class AssetComponentController extends Controller
     {
         $request->validate([
             'ASSETCOMPONENTNAME' => 'required|string|max:255',
-            // 'ASSETTYPEID' => 'required|exists:AssetType,ASSETTYPEID',
+            'ASSETTYPEID' => 'required|exists:AssetType,ASSETTYPEID',
         ]);
 
         $newId = AssetComponent::max('ASSETCOMPNETID') + 1;
@@ -48,19 +49,13 @@ class AssetComponentController extends Controller
         AssetComponent::create([
             'ASSETCOMPNETID' => $newId,
             'ASSETCOMPONENTNAME' => $componentName,
-            // 'ASSETTYPEID' => $request->ASSETTYPEID,
+            'ASSETTYPEID' => $request->ASSETTYPEID,
         ]);
 
-        // $assetComponents = AssetComponent::with('products.assetType')->get();
-
-        // return Inertia::render('Assets/AssetComponent', [
-        //     'assetComponents' => $assetComponents,
-        //     'title' => 'Asset Component',
-        //     'description' => 'Asset Component created successfully',
-        // ]);
+        $assetComponents = AssetComponent::with('products.assetType')->get();
 
         return Inertia::render('Assets/AssetComponent', [
-            'assetComponents' => AssetComponent::all(),
+            'assetComponents' => $assetComponents,
             'title' => 'Asset Component',
             'description' => 'Asset Component created successfully',
         ]);

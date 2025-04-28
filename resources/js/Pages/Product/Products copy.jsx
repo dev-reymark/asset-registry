@@ -17,7 +17,7 @@ import { useState } from "react";
 import { route } from "ziggy-js";
 
 export default function Products() {
-    const { products, filters, title, description } = usePage().props; // get products
+    const { products, filters } = usePage().props; // get products
     // console.log(products); // Log products to console for
 
     const [search, setSearch] = useState(filters.search || "");
@@ -48,8 +48,7 @@ export default function Products() {
         <Authenticated>
             <Head title="Products" />
             <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">{title}</h1>
-                <p className="text-gray-600">{description}</p>
+                <h1 className="text-2xl font-bold mb-4">Products</h1>
                 <Table
                     isVirtualized
                     aria-label="Products Table"
@@ -80,12 +79,30 @@ export default function Products() {
                     <TableHeader>
                         <TableColumn>PRODUCT ID</TableColumn>
                         <TableColumn>DESCRIPTION</TableColumn>
+                        <TableColumn>ASSET TYPE</TableColumn>
+                        <TableColumn>ASSET COMPONENT</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
                         {products.map((product) => (
                             <TableRow key={product.PRODUCTID}>
                                 <TableCell>{product.PRODUCTID}</TableCell>
                                 <TableCell>{product.DESCRIPTION}</TableCell>
+                                <TableCell>
+                                    {product.asset_type?.ASSETTYPE || "--"}
+                                </TableCell>
+                                <TableCell>
+                                    {product.asset_component
+                                        ?.ASSETCOMPONENTNAME ? (
+                                        <Chip color="success" variant="flat">
+                                            {
+                                                product.asset_component
+                                                    .ASSETCOMPONENTNAME
+                                            }
+                                        </Chip>
+                                    ) : (
+                                        "--"
+                                    )}
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

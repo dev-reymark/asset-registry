@@ -300,6 +300,12 @@ export default function Assets() {
         );
     };
 
+    const {
+        isOpen: isComponentModalOpen,
+        onOpen: onComponentModalOpen,
+        onOpenChange: onComponentModalOpenChange,
+    } = useDisclosure();
+
     return (
         <Authenticated>
             <Head title="Employee Assets" />
@@ -833,7 +839,7 @@ export default function Assets() {
                                                             ?.CONDITIONS
                                                     }
                                                 </p>
-                                                <p>
+                                                {/* <p>
                                                     <span className="font-semibold">
                                                         Components:
                                                     </span>{" "}
@@ -884,7 +890,17 @@ export default function Assets() {
                                                             })()}
                                                         </div>
                                                     ) : null}
-                                                </p>
+                                                </p> */}
+
+                                                <Button
+                                                    color="primary"
+                                                    variant="light"
+                                                    onPress={
+                                                        onComponentModalOpen
+                                                    }
+                                                >
+                                                    View components
+                                                </Button>
                                             </div>
                                         </div>
                                     )}
@@ -902,6 +918,53 @@ export default function Assets() {
                         )}
                     </ModalContent>
                 </Modal>
+
+                <Modal
+                size="3xl"
+                    isOpen={isComponentModalOpen}
+                    onOpenChange={onComponentModalOpenChange}
+                >
+                    <ModalContent>
+                        {(onClose) => (
+                            <>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    Components
+                                </ModalHeader>
+                                <ModalBody>
+                                    <Table aria-label="Components Table">
+                                        <TableHeader>
+                                            <TableColumn>
+                                                ASSETCOMPNETID
+                                            </TableColumn>
+                                            <TableColumn>
+                                                ASSETCOMPONENTNAME
+                                            </TableColumn>
+                                            <TableColumn>
+                                                DESCRIPTION
+                                            </TableColumn>
+                                            <TableColumn>
+                                                SYSTEMCOMPONENTID
+                                            </TableColumn>
+                                        </TableHeader>
+                                        <TableBody emptyContent="No rows to display.">
+                                            {[]}
+                                        </TableBody>
+                                    </Table>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        color="danger"
+                                        variant="light"
+                                        onPress={onClose}
+                                    >
+                                        Close
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
+
                 <Modal
                     isOpen={isTransferOpen}
                     onOpenChange={onTransferOpenChange}

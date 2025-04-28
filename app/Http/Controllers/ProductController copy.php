@@ -16,9 +16,11 @@ class ProductController extends Controller
     {
         $search = $request->get('search', '');
 
-        $products = Product::when($search, function ($query) use ($search) {
-            return $query->where('DESCRIPTION', 'like', '%' . $search . '%');
-        })->get();
+        $products = Product::with(['assetType', 'assetComponent'])
+            ->when($search, function ($query) use ($search) {
+                return $query->where('DESCRIPTION', 'like', '%' . $search . '%');
+            })
+            ->get();
 
         return Inertia::render('Product/Products', [
             'products' => $products,
@@ -35,7 +37,13 @@ class ProductController extends Controller
      */
     public function create(): Response
     {
+        // Fetch asset types and components for dropdowns
+        $assetTypes = AssetType::all(['ASSETTYPEID', 'ASSETTYPE']);
+        $assetComponents = AssetComponent::all(['ASSETCOMPNETID', 'ASSETCOMPONENTNAME', 'ASSETTYPEID']);
+
         return Inertia::render('Product/AddProduct', [
+            'assetTypes' => $assetTypes,
+            'assetComponents' => $assetComponents,
             'title' => 'Add Product',
             'description' => 'Add a new product to the system',
         ]);
@@ -48,6 +56,8 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'DESCRIPTION' => 'required|string|max:255|unique:products,DESCRIPTION',
+            'ASSETTYPE' => 'required|exists:AssetType,ASSETTYPEID',
+            'ASSETCOMPONENT' => 'required|exists:AssetComponents,ASSETCOMPNETID',
         ]);
 
         $newId = Product::max('PRODUCTID') + 1;
@@ -55,6 +65,8 @@ class ProductController extends Controller
         Product::create([
             'PRODUCTID' => $newId,
             'DESCRIPTION' => $validated['DESCRIPTION'],
+            'ASSETTYPE' => $validated['ASSETTYPE'],
+            'ASSETCOMPONENT' => $validated['ASSETCOMPONENT'],
         ]);
 
         return redirect()->route('products.index')->with('success', 'Product added successfully.');

@@ -7,8 +7,20 @@ import {
     Chip,
     Form,
     Input,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
     Select,
     SelectItem,
+    Table,
+    TableBody,
+    TableCell,
+    TableColumn,
+    TableHeader,
+    TableRow,
+    useDisclosure,
 } from "@heroui/react";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
@@ -32,14 +44,17 @@ const condition = [
 export default function AddAsset() {
     const {
         asset = [],
+        assetcomponents = [],
         products = [],
         assetno,
         location,
         title,
         description,
+        lastComponentNumbers = {},
     } = usePage().props;
     // console.log("Asset Data:", asset);
     // console.log("Products Data:", products);
+    console.log("Asset Components Data:", assetcomponents);
 
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -47,6 +62,10 @@ export default function AddAsset() {
     const [componentChips, setComponentChips] = useState([]);
     const [newComponent, setNewComponent] = useState("");
     const [loading, setLoading] = useState(false);
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const [selectedComponentId, setSelectedComponentId] = useState("");
+    const [componentDescription, setComponentDescription] = useState("");
+    const [addedComponents, setAddedComponents] = useState([]);
 
     const getNextAssetNumber = (employee) => {
         if (!employee || !employee.asset_details?.length) return 1;
@@ -54,6 +73,12 @@ export default function AddAsset() {
             .map((a) => parseInt(a.ASSETNUMBER))
             .filter((num) => !isNaN(num));
         return assetNumbers.length ? Math.max(...assetNumbers) + 1 : 1;
+    };
+
+    const getNextComponentNumber = (employeeId, productId) => {
+        const key = `${employeeId}-${productId}`;
+        const lastComponent = lastComponentNumbers[key];
+        return lastComponent ? lastComponent.last_component_number : 0; // Default to 0 if no component number exists
     };
 
     const { data, setData, post, errors, processing, reset } = useForm({
@@ -133,71 +158,99 @@ export default function AddAsset() {
         setData("PRODUCTID", selectedProductId);
         setData("DESCRIPTION", product?.DESCRIPTION?.trim() || "");
 
-        const componentName = product?.asset_component?.ASSETCOMPONENTNAME;
-        setComponentChips(componentName ? [componentName] : []);
-
         console.log("Selected Product:", product);
     };
 
     const handleStatusChange = (e) => setData("STATUS", e.target.value);
     const handleConditionChange = (e) => setData("CONDITIONS", e.target.value);
 
-    // const submit = async (e) => {
-    //     e.preventDefault();
-    //     setLoading(true);
+   const submit = async (e) => {
+       e.preventDefault();
+       setLoading(true);
 
-    //     // Ensure COMPONENT is updated before submit
-    //     setData("COMPONENT", JSON.stringify(componentChips));
+       // Prepare component details
+       const trimmedChips = componentChips.map((c) => c.trim());
 
-    //     try {
-    //         await post(route("assetsextended.store"), {
-    //             forceFormData: true,
-    //         });
-    //         toast.success("Asset added successfully");
-    //         router.visit(route("assets.index"));
-    //         setSelectedEmployee(null);
-    //         setSelectedProduct(null);
-    //         setGeneratedSystemAssetId("");
-    //     } catch (error) {
-    //         toast.error("An error occurred while adding the asset.");
-    //         console.error("Submit Error:", error);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
+       const updatedFormData = {
+           ...data,
+           COMPONENT: JSON.stringify([
+               ...trimmedChips,
+               ...addedComponents.map((comp) => comp.SYSTEMCOMPONENTID),
+           ]), // Include added components
+       };
 
-    const submit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
+       try {
+           await router.post(route("assetsextended.store"), updatedFormData, {
+               forceFormData: true,
+               preserveScroll: true,
+               onSuccess: () => {
+                   toast.success("Asset added successfully");
+                   router.visit(route("assets.index"));
+                   setSelectedEmployee(null);
+                   setSelectedProduct(null);
+                   setGeneratedSystemAssetId("");
+               },
+               onError: (err) => {
+                   console.error("Form Errors:", err);
+                   toast.error("An error occurred while adding the asset.");
+               },
+           });
+       } catch (error) {
+           toast.error("An unexpected error occurred.");
+           console.error("Submit Error:", error);
+       } finally {
+           setLoading(false);
+       }
+   };
 
-        const trimmedChips = componentChips.map((c) => c.trim());
 
-        const updatedFormData = {
-            ...data,
-            COMPONENT: JSON.stringify(trimmedChips),
-        };
+    const handleAddComponent = () => {
+        const component = assetcomponents.find(
+            (comp) =>
+                Number(comp.ASSETCOMPNETID) === Number(selectedComponentId)
+        );
 
-        try {
-            await router.post(route("assetsextended.store"), updatedFormData, {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Asset added successfully");
-                    router.visit(route("assets.index"));
-                    setSelectedEmployee(null);
-                    setSelectedProduct(null);
-                    setGeneratedSystemAssetId("");
-                },
-                onError: (err) => {
-                    console.error("Form Errors:", err);
-                    toast.error("An error occurred while adding the asset.");
-                },
-            });
-        } catch (error) {
-            toast.error("An unexpected error occurred.");
-            console.error("Submit Error:", error);
-        } finally {
-            setLoading(false);
+        if (component) {
+            const employeeId = selectedEmployee?.EMPLOYEEID;
+            const productId = selectedProduct?.PRODUCTID;
+
+            if (!employeeId || !productId) {
+                toast.error("Employee or Product not selected properly.");
+                return;
+            }
+
+            // Generate the key for employee-product-component combination
+            const key = `${employeeId}-${productId}-${component.ASSETCOMPNETID}`;
+
+            // Find the last component number used for this combination
+            const lastComponent = addedComponents
+                .filter((comp) => comp.SYSTEMCOMPONENTID.startsWith(key))
+                .reduce((max, comp) => {
+                    const componentNumber = parseInt(
+                        comp.SYSTEMCOMPONENTID.split("-").pop(),
+                        10
+                    );
+                    return componentNumber > max ? componentNumber : max;
+                }, 0);
+
+            // Increment the component number by 1
+            const nextComponentNumber = lastComponent + 1;
+
+            // Create the SYSTEMCOMPONENTID
+            const systemComponentId = `${employeeId}-${productId}-${component.ASSETCOMPNETID}-${nextComponentNumber}`;
+
+            const newComponent = {
+                ...component,
+                DESCRIPTION: componentDescription,
+                SYSTEMCOMPONENTID: systemComponentId,
+            };
+
+            // Add the new component to the added components
+            setAddedComponents((prev) => [...prev, newComponent]);
+            setComponentDescription("");
+            toast.success(`Component ${systemComponentId} added successfully.`);
+        } else {
+            toast.error("Component not found.");
         }
     };
 
@@ -254,7 +307,9 @@ export default function AddAsset() {
                             value={data.PRODUCTID}
                             onChange={handleProductChange}
                         >
-                            <SelectItem value="">Select a product</SelectItem>
+                            <SelectItem value="" isReadOnly>
+                                Select a product
+                            </SelectItem>
 
                             {products.map((product) => (
                                 <SelectItem
@@ -271,49 +326,11 @@ export default function AddAsset() {
                             isReadOnly
                             value={data.DESCRIPTION}
                         />
-
-                        <div className="flex gap-2 flex-wrap mt-2">
-                            {componentChips.map((comp, index) => (
-                                <Chip
-                                    key={index}
-                                    color="success"
-                                    variant="flat"
-                                    onClose={() =>
-                                        setComponentChips(
-                                            componentChips.filter(
-                                                (c) => c !== comp
-                                            )
-                                        )
-                                    }
-                                >
-                                    {comp}
-                                </Chip>
-                            ))}
-                        </div>
                     </div>
 
-                    <Input
-                        label="New Components"
-                        value={newComponent}
-                        onChange={(e) => setNewComponent(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && newComponent.trim()) {
-                                e.preventDefault();
-                                if (
-                                    !componentChips.includes(
-                                        newComponent.trim()
-                                    )
-                                ) {
-                                    setComponentChips([
-                                        ...componentChips,
-                                        newComponent.trim(),
-                                    ]);
-                                    setNewComponent("");
-                                }
-                            }
-                        }}
-                        description="Want to add a new component? Press Enter to add."
-                    />
+                    <Button color="primary" onPress={onOpen}>
+                        Add Component
+                    </Button>
 
                     <div className="w-full flex gap-4">
                         <Input
@@ -429,6 +446,147 @@ export default function AddAsset() {
                         </Button>
                     </div>
                 </Form>
+                <Modal
+                    hideCloseButton
+                    isOpen={isOpen}
+                    onOpenChange={onOpenChange}
+                    size="xl"
+                >
+                    <ModalContent>
+                        {(onClose) => (
+                            <>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    Add Component
+                                </ModalHeader>
+                                <ModalBody>
+                                    <Select
+                                        isRequired
+                                        label="Select Component"
+                                        value={selectedComponentId}
+                                        onChange={(e) =>
+                                            setSelectedComponentId(
+                                                e.target.value
+                                            )
+                                        }
+                                    >
+                                        {assetcomponents.map((component) => (
+                                            <SelectItem
+                                                key={component.ASSETCOMPNETID}
+                                                value={component.ASSETCOMPNETID}
+                                            >
+                                                {component.ASSETCOMPONENTNAME}
+                                            </SelectItem>
+                                        ))}
+                                    </Select>
+                                    <Input
+                                        label="Component Description"
+                                        value={componentDescription}
+                                        onChange={(e) =>
+                                            setComponentDescription(
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+                                    <Button
+                                        color="primary"
+                                        onPress={handleAddComponent}
+                                    >
+                                        Add
+                                    </Button>
+
+                                    <Table aria-label="Components Table">
+                                        <TableHeader>
+                                            <TableColumn>
+                                                ASSETCOMPNETID
+                                            </TableColumn>
+                                            <TableColumn>
+                                                ASSETCOMPONENTNAME
+                                            </TableColumn>
+                                            <TableColumn>
+                                                DESCRIPTION
+                                            </TableColumn>
+                                            <TableColumn>
+                                                SYSTEMCOMPONENTID
+                                            </TableColumn>
+                                        </TableHeader>
+                                        <TableBody emptyContent="No rows to display.">
+                                            {addedComponents.map(
+                                                (component) => (
+                                                    <TableRow
+                                                        key={
+                                                            component.ASSETCOMPNETID
+                                                        }
+                                                    >
+                                                        <TableCell>
+                                                            {
+                                                                component.ASSETCOMPNETID
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {
+                                                                component.ASSETCOMPONENTNAME
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {
+                                                                component.DESCRIPTION
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {
+                                                                component.SYSTEMCOMPONENTID
+                                                            }
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        color="danger"
+                                        variant="light"
+                                        onPress={onClose}
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button
+                                        color="primary"
+                                        onPress={() => {
+                                            // Close the modal first
+                                            onClose();
+
+                                            // Update COMPONENT field with both base and added components
+                                            setData(
+                                                "COMPONENT",
+                                                JSON.stringify([
+                                                    ...componentChips.map((c) =>
+                                                        c.trim()
+                                                    ), // Base components
+                                                    ...addedComponents.map(
+                                                        (comp) =>
+                                                            comp.SYSTEMCOMPONENTID
+                                                    ), // Added components
+                                                ])
+                                            );
+
+                                            // Show a success toast notification
+                                            toast.success(
+                                                "Components successfully added to the asset."
+                                            );
+
+                                            // Optionally, trigger the submit form action here if you want to directly submit the form after closing the modal
+                                            // submit(); // Uncomment if you want the form to be submitted automatically after closing the modal
+                                        }}
+                                    >
+                                        Continue
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
             </div>
         </Authenticated>
     );

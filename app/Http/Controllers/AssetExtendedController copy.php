@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\AssetComponent;
 use App\Models\AssetDetail;
-use App\Models\ComponentDetail;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
@@ -28,21 +27,12 @@ class AssetExtendedController extends Controller
         $assetno = AssetDetail::max('ASSETNO');
         $newassetno = $assetno ? $assetno + 1 : null;
 
-        // Fetch the last COMPONENTNUMBER for each EMPLOYEEID and PRODUCTID combination
-        $lastComponentNumbers = ComponentDetail::select('EMPLOYEEID', 'PRODUCTID', DB::raw('MAX(COMPONENTNUMBER) as last_component_number'))
-            ->groupBy('EMPLOYEEID', 'PRODUCTID')
-            ->get()
-            ->keyBy(function ($item) {
-                return "{$item->EMPLOYEEID}-{$item->PRODUCTID}"; // Unique key for EMPLOYEEID-PRODUCTID combination
-            });
-
         return Inertia::render('AssetsExtended/AddAsset', [
             'asset' => $asset,
             'assetcomponents' => $assetcomponents,
             'location' => $location,
             'products' => $products,
             'assetno' => $newassetno,
-            'lastComponentNumbers' => $lastComponentNumbers,
             'title' => 'Add Assets',
             'description' => 'Add a new asset',
         ]);

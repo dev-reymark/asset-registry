@@ -75,38 +75,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['role:admin']);
     Route::resource('assetComponents', AssetComponentController::class)->middleware(['role:admin']);
-
     // Department Routes
     Route::resource('departments', DepartmentController::class)->middleware(RoleMiddleware::class . ':admin');
-    // Route::prefix('departments')->middleware(RoleMiddleware::class . ':admin')->group(function () {
-    //     Route::get('/', [DepartmentController::class, 'index'])->name('departments.index');
-    //     Route::get('/create', [DepartmentController::class, 'create'])->name('departments.create');
-    //     Route::post('/', [DepartmentController::class, 'store'])->name('departments.store');
-    // });
-
     // Location Routes
     Route::resource('locations', LocationController::class)->middleware(RoleMiddleware::class . ':admin');
-    // Route::prefix('locations')->middleware('role:admin')->group(function () {
-    //     Route::get('/', [LocationController::class, 'index'])->name('locations.index');
-    //     Route::get('/create', [LocationController::class, 'create'])->name('locations.create');
-    //     Route::post('/', [LocationController::class, 'store'])->name('locations.store');
-    // });
-
     // Workstations
     Route::resource('workstations', WorkStationController::class)->middleware(RoleMiddleware::class . ':admin');
-    // Route::prefix('workstations')->middleware(['role:admin'])->group(function () {
-    //     Route::get('/', [WorkStationController::class, 'index'])->name('workstations.index');
-    //     Route::get('/create', [WorkStationController::class, 'create'])->name('workstations.create');
-    //     Route::post('/', [WorkStationController::class, 'store'])->name('workstations.store');
-    // });
-
     // Products
     Route::resource('products', ProductController::class)->middleware(RoleMiddleware::class . ':admin');
-    // Route::prefix('products')->middleware(['role:admin'])->group(function () {
-    //     Route::get('/', [ProductController::class, 'index'])->name('products.index');
-    //     Route::get('/create', [ProductController::class, 'create'])->name('products.create');
-    //     Route::post('/', [ProductController::class, 'store'])->name('products.store');
-    // });
 
 });
 

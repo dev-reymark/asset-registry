@@ -11,14 +11,15 @@ import {
 } from "@heroui/react";
 
 export default function AssetComponent() {
-    const { assetComponents } = usePage().props;
+    const { assetComponents, title, description } = usePage().props;
     // console.log(assetComponents);
 
     return (
         <Authenticated>
             <Head title="Asset Components" />
             <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">Asset Components</h1>
+                <h1 className="text-2xl font-bold mb-4">{title}</h1>
+                <p className="mb-4">{description}</p>
 
                 <Table
                     isVirtualized
@@ -26,21 +27,21 @@ export default function AssetComponent() {
                     aria-label="Asset Components table"
                     className="mt-4"
                     topContent={
-                        <div className="flex justify-between items-center">
+                        <div className="flex my-4 justify-between items-center">
                             <Button
                                 color="primary"
                                 as={Link}
                                 href={route("assetComponents.create")}
                             >
-                                Add Asset Component
+                                Add Component
                             </Button>
                         </div>
                     }
                 >
                     <TableHeader>
-                        <TableColumn>ASSET COMPONENT ID</TableColumn>
-                        <TableColumn>ASSET TYPE</TableColumn>
-                        <TableColumn>ASSET COMPONENT</TableColumn>
+                        <TableColumn>COMPONENT ID</TableColumn>
+                        {/* <TableColumn>ASSET TYPE</TableColumn> */}
+                        <TableColumn>COMPONENT NAME</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"No rows to display."}>
                         {assetComponents.map((assetComponent) => (
@@ -48,9 +49,9 @@ export default function AssetComponent() {
                                 <TableCell>
                                     {assetComponent.ASSETCOMPNETID}
                                 </TableCell>
-                                <TableCell>
+                                {/* <TableCell>
                                     {assetComponent.asset_type?.ASSETTYPE}
-                                </TableCell>
+                                </TableCell> */}
                                 <TableCell>
                                     {assetComponent.ASSETCOMPONENTNAME}
                                 </TableCell>

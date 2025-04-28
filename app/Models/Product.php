@@ -33,4 +33,9 @@ class Product extends Model
     {
         return $this->belongsTo(AssetComponent::class, 'ASSETCOMPONENT', 'ASSETCOMPNETID');
     }
+
+    public function assetComponents()
+    {
+        return $this->belongsToMany(AssetComponent::class, 'product_asset_component', 'PRODUCTID', 'ASSETCOMPNETID');
+    }
 }
