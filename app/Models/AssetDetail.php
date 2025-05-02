@@ -135,4 +135,9 @@ class AssetDetail extends Model
         // Reorder the asset numbers again
         self::reorderAssetNumbersForEmployee($this->EMPLOYEEID);
     }
+
+    public function componentDetails()
+    {
+        return $this->hasMany(ComponentDetail::class, 'ASSETNO', 'ASSETNO');
+    }
 }

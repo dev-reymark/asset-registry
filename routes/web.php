@@ -68,6 +68,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/', [AssetExtendedController::class, 'store'])->name('assetsextended.store');
     Route::post('/transfer', [AssetExtendedController::class, 'transfer'])->name('assetsextended.transfer');
     Route::post('/assets/{assetNo}/archive', [AssetExtendedController::class, 'archive'])->name('assetsextended.archive');
+    Route::post('/assets/{assetNo}/declassify', [AssetExtendedController::class, 'declassify'])->name('assetsextended.declassify');
     Route::post('/assets/{assetNo}/restore', [AssetExtendedController::class, 'restore'])->name('assetsextended.restore');
     Route::post('/assets/bulk-archive', [AssetExtendedController::class, 'bulkArchive'])->name('assetsextended.bulkArchive');
     Route::get('/asset/{assetNo}/edit', [AssetExtendedController::class, 'edit'])->name('assetsextended.edit');

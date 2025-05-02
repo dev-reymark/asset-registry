@@ -35,53 +35,11 @@ class AssetController extends Controller
      *
      * @return \Inertia\Response
      */
-    // public function index(): Response
-    // {
-    //     $assets = Asset::with('employee')->active()->get();
-
-    //     return Inertia::render('Assets/Assets', [
-    //         'assets' => $assets,
-    //         'title' => 'Assets',
-    //         'description' => 'List of all employee assets',
-    //     ]);
-    // }
-
-    // public function index(Request $request): Response
-    // {
-    //     $query = Asset::with('employee')->active();
-
-    //     // Apply search filter if search query is provided
-    //     if ($request->has('search') && $request->search !== '') {
-    //         $query->where(function ($q) use ($request) {
-    //             $q->where('ASSETSID', 'like', '%' . $request->search . '%')
-    //                 ->orWhere('EMPLOYEENAME', 'like', '%' . $request->search . '%');
-    //         });
-    //     }
-
-    //     // Apply sorting if sort query is provided
-    //     if ($request->has('sort') && $request->sort !== '') {
-    //         $sortDirection = $request->sort === 'name_asc' ? 'asc' : 'desc';
-    //         $query->orderBy('EMPLOYEENAME', $sortDirection);
-    //     }
-
-    //     // Get the filtered and sorted assets
-    //     $assets = $query->get();
-
-    //     return Inertia::render('Assets/Assets', [
-    //         'assets' => $assets,
-    //         'filters' => [
-    //             'search' => $request->search, // Make sure search is passed correctly
-    //             'sort' => $request->sort,
-    //         ],
-    //         'title' => 'Assets',
-    //         'description' => 'List of all employee assets',
-    //     ]);
-    // }
-
     public function index(Request $request): Response
     {
-        $query = Asset::with('assetDetails.location', 'employee.department', 'employee.location', 'employee.workstation')->active();
+        $query = Asset::with('assetDetails.location', 'assetDetails.componentDetails.assetComponent', 'employee.department', 'employee.location')->active();
         $location = Location::all();
+        $employees = Employee::all();
         // Apply search filter if search query is provided
         if ($request->has('search') && $request->search !== '') {
             $query->where(function ($q) use ($request) {
@@ -142,6 +100,7 @@ class AssetController extends Controller
 
         return Inertia::render('Assets/Assets', [
             'assets' => $assets,
+            'employees' => $employees,
             'location' => $location,
             'filters' => [
                 'search' => $request->search, // Make sure search is passed correctly

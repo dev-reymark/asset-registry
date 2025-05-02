@@ -28,7 +28,7 @@ class AssetExtendedController extends Controller
         $assetno = AssetDetail::max('ASSETNO');
         $newassetno = $assetno ? $assetno + 1 : null;
 
-        // Fetch the last COMPONENTNUMBER for each EMPLOYEEID and PRODUCTID combination
+        // Get the last COMPONENTNUMBER for each EMPLOYEEID and PRODUCTID combination
         $lastComponentNumbers = ComponentDetail::select('EMPLOYEEID', 'PRODUCTID', DB::raw('MAX(COMPONENTNUMBER) as last_component_number'))
             ->groupBy('EMPLOYEEID', 'PRODUCTID')
             ->get()
@@ -71,7 +71,12 @@ class AssetExtendedController extends Controller
             'WORKSTATION' => 'nullable|string|max:255',
             'TYPESIZE' => 'nullable|string|max:255',
             'NOPRINT' => 'nullable|string|max:255',
-            'COMPONENT' => 'nullable|string|max:255',
+            'COMPONENT' => 'nullable|array',
+            'COMPONENT.*.ASSETCOMPONENTNAME' => 'required|string|max:255',
+            'COMPONENT.*.DESCRIPTION' => 'nullable|string|max:255',
+            'COMPONENT.*.ASSETTYPEID' => 'nullable|numeric',
+            'COMPONENT.*.ASSETCOMPNETID' => 'nullable|numeric',
+            'COMPONENT.*.SYSTEMCOMPONENTID' => 'nullable|string|max:255',
             'WITHCOMPONENTS' => 'nullable|boolean',
             'SYSTEMASSETID' => 'nullable|string|regex:/^[\w-]+$/',
             'SYSTEMCOMPONENTID' => 'nullable|string|max:255',
@@ -81,22 +86,6 @@ class AssetExtendedController extends Controller
         DB::beginTransaction();
 
         try {
-            // $imagePath = null;
-
-            // if ($request->hasFile('IMAGEPATH') && $request->file('IMAGEPATH')->isValid()) {
-            //     $file = $request->file('IMAGEPATH');
-            //     $fileName = uniqid() . '-' . $file->getClientOriginalName();
-            //     $destinationPath = storage_path('app/public/assets');
-
-            //     $file->move($destinationPath, $fileName);
-            //     $imagePath = 'assets/' . $fileName;
-
-            //     if (!file_exists(storage_path('app/public/' . $imagePath))) {
-            //         Log::error('Image upload failed. File not found.', ['path' => $imagePath]);
-            //         DB::rollBack();
-            //         return redirect()->route('assetsextended.create')->with('error', 'Image upload failed.');
-            //     }
-            // }
 
             $imagePaths = [];
 
@@ -105,6 +94,12 @@ class AssetExtendedController extends Controller
                     if ($file->isValid()) {
                         $fileName = uniqid() . '-' . $file->getClientOriginalName();
                         $destinationPath = storage_path('app/public/assets');
+
+                        // Ensure the directory exists before moving the file
+                        if (!file_exists($destinationPath)) {
+                            mkdir($destinationPath, 0755, true);  // Creates the directory with appropriate permissions
+                        }
+
                         $file->move($destinationPath, $fileName);
                         $relativePath = 'assets/' . $fileName;
 
@@ -119,10 +114,9 @@ class AssetExtendedController extends Controller
                 }
             }
 
-            $components = $validated['COMPONENT'] ? json_decode($validated['COMPONENT'], true) : [];
-            $withComponents = is_array($components) && count($components) > 0;
+            $components = $validated['COMPONENT'] ?? [];
 
-            $assetDetail = AssetDetail::create([
+            AssetDetail::create([
                 'EMPLOYEEID' => $validated['EMPLOYEEID'] ?? null,
                 'ASSETID' => $validated['ASSETSID'],
                 'ASSETNO' => $validated['ASSETNO'] ?? null,
@@ -138,13 +132,24 @@ class AssetExtendedController extends Controller
                 'WORKSTAION' => $validated['WORKSTATION'] ?? null,
                 'TYPESIZE' => $validated['TYPESIZE'] ?? null,
                 'NOPRINT' => $validated['NOPRINT'] ?? null,
-                'COMPONENT' => $withComponents ? json_encode($components) : null,
-                'WITHCOMPONENTS' => $withComponents,
+                'COMPONENT' => null,
+                'WITHCOMPONENTS' => $validated['WITHCOMPONENTS'] ?? false,
                 'SYSTEMASSETID' => $validated['SYSTEMASSETID'] ?? null,
                 'SYSTEMCOMPONENTID' => $validated['SYSTEMCOMPONENTID'] ?? null,
                 'archived' => false,
                 'LOCATIONID' => $validated['LOCATIONID'] ?? null,
             ]);
+
+            foreach ($components as $component) {
+                ComponentDetail::create([
+                    'EMPLOYEEID' => $validated['EMPLOYEEID'],
+                    'PRODUCTID' => $validated['PRODUCTID'],
+                    'ASSETNO' => $validated['ASSETNO'],
+                    'SYSTEMCOMPONENTID' => $component['SYSTEMCOMPONENTID'] ?? null,
+                    'ASSETCOMPNETID' => $component['ASSETCOMPNETID'] ?? null,
+                    'COMPONENTDESCRIPTION' => $component['DESCRIPTION'] ?? null
+                ]);
+            }
 
             DB::commit();
             return redirect()->route('assetsextended.create')->with('success', 'Asset detail added successfully!');
@@ -157,18 +162,19 @@ class AssetExtendedController extends Controller
 
     public function edit($assetNo)
     {
-        // Fetch the asset detail and related data
+        // Get the asset detail and related data
         $assetDetail = AssetDetail::where('ASSETNO', $assetNo)
-            ->with('asset.employee')
+            ->with('asset.employee', 'componentDetails.assetComponent', 'location')
             ->firstOrFail();
 
-        // Fetch employee details
         $employees = Employee::findOrFail($assetDetail->EMPLOYEEID);
         $products = Product::with(['assetComponent'])->get();
         $locations = Location::all();
+        $assetcomponents = AssetComponent::all();
 
         return Inertia::render('AssetsExtended/EditAsset', [
             'assetDetail' => $assetDetail,
+            'assetcomponents' => $assetcomponents,
             'products' => $products,
             'locations' => $locations,
             'employees' => $employees,
@@ -181,7 +187,6 @@ class AssetExtendedController extends Controller
     {
         Log::debug('Update request data:', ['data' => $request->all()]);
 
-        // Validate request
         $validated = $request->validate([
             'ASSETID' => 'required|exists:Assets,ASSETSID',
             'EMPLOYEEID' => 'nullable|numeric',
@@ -198,7 +203,11 @@ class AssetExtendedController extends Controller
             'WORKSTATION' => 'nullable|string|max:255',
             'TYPESIZE' => 'nullable|string|max:255',
             'NOPRINT' => 'nullable|string|max:255',
-            'COMPONENT' => 'nullable|string|max:255',
+            'COMPONENT' => 'nullable|array',
+            'COMPONENT.*.COMPONENTDESCRIPTION' => 'nullable|string|max:255',
+            'COMPONENT.*.ASSETTYPEID' => 'nullable|numeric',
+            'COMPONENT.*.ASSETCOMPNETID' => 'nullable|numeric',
+            'COMPONENT.*.SYSTEMCOMPONENTID' => 'nullable|string|max:255',
             'WITHCOMPONENTS' => 'nullable|boolean',
             'SYSTEMASSETID' => 'nullable|string|regex:/^[\w-]+$/',
             'SYSTEMCOMPONENTID' => 'nullable|string|max:255',
@@ -208,72 +217,68 @@ class AssetExtendedController extends Controller
         DB::beginTransaction();
 
         try {
-            // Log validated data for debugging
-            Log::debug('Validated data:', ['validated' => $validated]);
+            $assetDetail = AssetDetail::findOrFail($assetNo);
 
-            // Handle image uploads if present
-            $imagePaths = [];
-            if ($request->hasFile('IMAGEPATH')) {
-                foreach ($request->file('IMAGEPATH') as $file) {
+            $existingPaths = json_decode($request->input('existing_images'), true) ?? [];
+            $imagePaths = []; // Initialize $imagePaths as an empty array
+            $imagePaths = array_merge($imagePaths, $existingPaths);
+
+            if ($request->hasFile('new_images')) {
+                foreach ($request->file('new_images') as $file) {
                     if ($file->isValid()) {
                         $fileName = uniqid() . '-' . $file->getClientOriginalName();
                         $destinationPath = storage_path('app/public/assets');
-                        $file->move($destinationPath, $fileName);
-                        $relativePath = 'assets/' . $fileName;
 
-                        if (!file_exists(storage_path('app/public/' . $relativePath))) {
-                            Log::error('Image upload failed. File not found.', ['path' => $relativePath]);
-                            DB::rollBack();
-                            return redirect()->route('assetsextended.edit', ['assetNo' => $assetNo])
-                                ->with('error', 'Image upload failed.');
+                        if (!file_exists($destinationPath)) {
+                            mkdir($destinationPath, 0755, true);
                         }
 
+                        $file->move($destinationPath, $fileName);
+                        $relativePath = 'assets/' . $fileName;
                         $imagePaths[] = $relativePath;
                     }
                 }
             }
 
-            // Log image paths after processing
-            Log::debug('Image paths after upload:', ['imagePaths' => $imagePaths]);
-
-            // Handle COMPONENT field (ensure it's decoded correctly)
-            $components = $validated['COMPONENT'] ? json_decode($validated['COMPONENT'], true) : [];
+            $components = $validated['COMPONENT'] ?? [];
             $withComponents = is_array($components) && count($components) > 0;
 
-            // Log the decoded components and the 'withComponents' flag
-            Log::debug('Decoded COMPONENT field:', ['components' => $components, 'withComponents' => $withComponents]);
-
-            // Find the asset detail to be updated
-            $assetDetail = AssetDetail::findOrFail($assetNo);
-
-            // Log the existing asset details before updating
-            Log::debug('Existing asset details before update:', ['assetDetail' => $assetDetail]);
-
-            // Update asset detail
+            // Update the main asset detail
             $assetDetail->update([
-                'EMPLOYEEID' => $validated['EMPLOYEEID'] ?? $assetDetail->EMPLOYEEID,
+                'EMPLOYEEID' => $validated['EMPLOYEEID'],
                 'ASSETID' => $validated['ASSETID'],
-                'PRODUCTID' => $validated['PRODUCTID'] ?? $assetDetail->PRODUCTID,
-                'DESCRIPTION' => $validated['DESCRIPTION'] ?? $assetDetail->DESCRIPTION,
-                'MODEL' => $validated['MODEL'] ?? $assetDetail->MODEL,
-                'SERIALNO' => $validated['SERIALNO'] ?? $assetDetail->SERIALNO,
-                'ISSUEDTO' => $validated['ISSUEDTO'] ?? $assetDetail->ISSUEDTO,
-                'DATEISSUUED' => $validated['DATEISSUUED'] ?? $assetDetail->DATEISSUUED,
-                'IMAGEPATH' => $imagePaths ? json_encode($imagePaths) : $assetDetail->IMAGEPATH,
-                'STATUS' => $validated['STATUS'] ?? $assetDetail->STATUS,
-                'CONDITIONS' => $validated['CONDITIONS'] ?? $assetDetail->CONDITIONS,
-                'WORKSTAION' => $validated['WORKSTATION'] ?? $assetDetail->WORKSTATION,
-                'TYPESIZE' => $validated['TYPESIZE'] ?? $assetDetail->TYPESIZE,
-                'NOPRINT' => $validated['NOPRINT'] ?? $assetDetail->NOPRINT,
-                'COMPONENT' => $withComponents ? json_encode($components) : $assetDetail->COMPONENT,
+                'PRODUCTID' => $validated['PRODUCTID'],
+                'DESCRIPTION' => $validated['DESCRIPTION'],
+                'MODEL' => $validated['MODEL'],
+                'SERIALNO' => $validated['SERIALNO'],
+                'ISSUEDTO' => $validated['ISSUEDTO'],
+                'DATEISSUUED' => $validated['DATEISSUUED'],
+                'IMAGEPATH' => json_encode($imagePaths),
+                'STATUS' => $validated['STATUS'],
+                'CONDITIONS' => $validated['CONDITIONS'],
+                'WORKSTAION' => $validated['WORKSTATION'],
+                'TYPESIZE' => $validated['TYPESIZE'],
+                'NOPRINT' => $validated['NOPRINT'],
+                'COMPONENT' => null,
                 'WITHCOMPONENTS' => $withComponents,
-                'SYSTEMASSETID' => $validated['SYSTEMASSETID'] ?? $assetDetail->SYSTEMASSETID,
-                'SYSTEMCOMPONENTID' => $validated['SYSTEMCOMPONENTID'] ?? $assetDetail->SYSTEMCOMPONENTID,
-                'LOCATIONID' => $validated['LOCATIONID'] ?? $assetDetail->LOCATIONID,
+                'SYSTEMASSETID' => $validated['SYSTEMASSETID'],
+                'SYSTEMCOMPONENTID' => $validated['SYSTEMCOMPONENTID'],
+                'LOCATIONID' => $validated['LOCATIONID'],
             ]);
 
-            // Log after successful update
-            Log::debug('Asset detail updated successfully:', ['assetDetail' => $assetDetail]);
+            // Update related ComponentDetails
+            ComponentDetail::where('ASSETNO', $assetNo)->delete(); // Clear old components
+
+            foreach ($components as $component) {
+                ComponentDetail::create([
+                    'EMPLOYEEID' => $validated['EMPLOYEEID'],
+                    'PRODUCTID' => $validated['PRODUCTID'],
+                    'ASSETNO' => $assetNo,
+                    'SYSTEMCOMPONENTID' => $component['SYSTEMCOMPONENTID'] ?? null,
+                    'ASSETCOMPNETID' => $component['ASSETCOMPNETID'] ?? null,
+                    'COMPONENTDESCRIPTION' => $component['COMPONENTDESCRIPTION'] ?? null,
+                ]);
+            }
 
             DB::commit();
             return redirect()->route('assetsextended.edit', ['assetNo' => $assetNo])->with('success', 'Asset detail updated successfully!');
@@ -284,8 +289,46 @@ class AssetExtendedController extends Controller
         }
     }
 
-
     public function transfer(Request $request)
+    {
+        Log::debug('Transfer request data:', ['data' => $request->all()]);
+
+        $validated = $request->validate([
+            'asset_nos' => 'array',
+            'asset_nos.*' => 'integer',
+            'employee_id' => 'integer|exists:employee,EMPLOYEEID',
+            'location_id' => 'integer|exists:location,LOCATIONID',
+            'status' => 'string',
+        ]);
+
+        Log::debug('Validated Data:', ['validated' => $validated]);
+
+        // Check if location_id exists and log
+        $locationExists = DB::table('location')->where('LOCATIONID', $validated['location_id'])->exists();
+        Log::debug('Location Exists:', ['exists' => $locationExists]);
+
+        if (!$locationExists) {
+            Log::error('Location ID does not exist.');
+            return redirect()->route('assets.index')->with('error', 'Invalid location.');
+        }
+
+        // Wrap in transaction for atomicity
+        DB::transaction(function () use ($validated) {
+            $updated = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])
+                ->update([
+                    'EMPLOYEEID' => $validated['employee_id'],
+                    'LOCATIONID' => $validated['location_id'],
+                    'STATUS' => $validated['status'],
+                    'ISSUEDTO' => $validated['employee_id'] ? optional(Employee::find($validated['employee_id']))->EMPLOYEENAME : null,
+                ]);
+
+            Log::debug('Number of rows updated:', ['updated' => $updated]);
+        });
+
+        return redirect()->route('assets.index')->with('success', 'Assets transferred successfully.');
+    }
+
+    public function declassify(Request $request)
     {
         Log::debug('Transfer request data:', ['data' => $request->all()]);
 

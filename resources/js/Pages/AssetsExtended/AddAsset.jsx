@@ -4,7 +4,6 @@ import {
     Autocomplete,
     AutocompleteItem,
     Button,
-    Chip,
     Form,
     Input,
     Modal,
@@ -25,21 +24,10 @@ import {
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { route } from "ziggy-js";
-
-const status = [
-    { label: "Active", value: "Active" },
-    { label: "Defective", value: "Defective" },
-    { label: "For Aquisition", value: "For Aquisition" },
-    { label: "For Repair", value: "For Repair" },
-    { label: "For Replacement", value: "For Replacement" },
-];
-
-const condition = [
-    { label: "Good", value: "Good" },
-    { label: "Defective", value: "Defective" },
-    { label: "For return to shell", value: "For return to shell" },
-    { label: "Stolen", value: "Stolen" },
-];
+import {
+    condition,
+    status,
+} from "../../Components/Assets/constants/statusConstants";
 
 export default function AddAsset() {
     const {
@@ -50,17 +38,11 @@ export default function AddAsset() {
         location,
         title,
         description,
-        lastComponentNumbers = {},
     } = usePage().props;
-    // console.log("Asset Data:", asset);
-    // console.log("Products Data:", products);
-    console.log("Asset Components Data:", assetcomponents);
 
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [generatedSystemAssetId, setGeneratedSystemAssetId] = useState("");
-    const [componentChips, setComponentChips] = useState([]);
-    const [newComponent, setNewComponent] = useState("");
     const [loading, setLoading] = useState(false);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [selectedComponentId, setSelectedComponentId] = useState("");
@@ -73,12 +55,6 @@ export default function AddAsset() {
             .map((a) => parseInt(a.ASSETNUMBER))
             .filter((num) => !isNaN(num));
         return assetNumbers.length ? Math.max(...assetNumbers) + 1 : 1;
-    };
-
-    const getNextComponentNumber = (employeeId, productId) => {
-        const key = `${employeeId}-${productId}`;
-        const lastComponent = lastComponentNumbers[key];
-        return lastComponent ? lastComponent.last_component_number : 0; // Default to 0 if no component number exists
     };
 
     const { data, setData, post, errors, processing, reset } = useForm({
@@ -98,7 +74,7 @@ export default function AddAsset() {
         WORKSTATION: "",
         TYPESIZE: "",
         NOPRINT: "",
-        COMPONENT: "",
+        COMPONENT: null,
         WITHCOMPONENTS: false,
         SYSTEMASSETID: "",
         SYSTEMCOMPONENTID: "",
@@ -126,13 +102,6 @@ export default function AddAsset() {
             setData("SYSTEMASSETID", newId);
             setData("SYSTEMCOMPONENTID", componentId || "");
             setData("WITHCOMPONENTS", !!componentId);
-
-            // Add base component to chip display
-            if (componentName) {
-                setComponentChips([componentName]);
-            } else {
-                setComponentChips([]);
-            }
         }
     }, [selectedEmployee, selectedProduct]);
 
@@ -145,7 +114,6 @@ export default function AddAsset() {
         setData("EMPLOYEENAME", employee?.EMPLOYEENAME?.trim() || "");
         setData("ASSETSID", employee?.ASSETSID || "");
         setData("ISSUEDTO", employee?.EMPLOYEENAME?.trim() || "");
-        console.log("Selected Employee:", employee);
     };
 
     const handleProductChange = (e) => {
@@ -157,52 +125,41 @@ export default function AddAsset() {
         setSelectedProduct(product);
         setData("PRODUCTID", selectedProductId);
         setData("DESCRIPTION", product?.DESCRIPTION?.trim() || "");
-
-        console.log("Selected Product:", product);
     };
-
     const handleStatusChange = (e) => setData("STATUS", e.target.value);
     const handleConditionChange = (e) => setData("CONDITIONS", e.target.value);
 
-   const submit = async (e) => {
-       e.preventDefault();
-       setLoading(true);
+    const submit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
 
-       // Prepare component details
-       const trimmedChips = componentChips.map((c) => c.trim());
+        const updatedFormData = {
+            ...data,
+        };
 
-       const updatedFormData = {
-           ...data,
-           COMPONENT: JSON.stringify([
-               ...trimmedChips,
-               ...addedComponents.map((comp) => comp.SYSTEMCOMPONENTID),
-           ]), // Include added components
-       };
-
-       try {
-           await router.post(route("assetsextended.store"), updatedFormData, {
-               forceFormData: true,
-               preserveScroll: true,
-               onSuccess: () => {
-                   toast.success("Asset added successfully");
-                   router.visit(route("assets.index"));
-                   setSelectedEmployee(null);
-                   setSelectedProduct(null);
-                   setGeneratedSystemAssetId("");
-               },
-               onError: (err) => {
-                   console.error("Form Errors:", err);
-                   toast.error("An error occurred while adding the asset.");
-               },
-           });
-       } catch (error) {
-           toast.error("An unexpected error occurred.");
-           console.error("Submit Error:", error);
-       } finally {
-           setLoading(false);
-       }
-   };
-
+        try {
+            router.post(route("assetsextended.store"), updatedFormData, {
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Asset added successfully");
+                    router.visit(route("assets.index"));
+                    setSelectedEmployee(null);
+                    setSelectedProduct(null);
+                    setGeneratedSystemAssetId("");
+                },
+                onError: (err) => {
+                    console.error("Form Errors:", err);
+                    toast.error("An error occurred while adding the asset.");
+                },
+            });
+        } catch (error) {
+            toast.error("An unexpected error occurred.");
+            console.error("Submit Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleAddComponent = () => {
         const component = assetcomponents.find(
@@ -257,7 +214,6 @@ export default function AddAsset() {
     return (
         <Authenticated>
             <Head title={title} />
-
             <div>
                 <Button
                     color="primary"
@@ -268,11 +224,9 @@ export default function AddAsset() {
                     ← Back
                 </Button>
             </div>
-
             <div className="p-6">
                 <h2 className="text-xl font-semibold text-gray-700">{title}</h2>
                 <p className="text-gray-600 mb-4">{description}</p>
-
                 <Form
                     onSubmit={submit}
                     className="w-full flex flex-col gap-y-4"
@@ -328,7 +282,11 @@ export default function AddAsset() {
                         />
                     </div>
 
-                    <Button color="primary" onPress={onOpen}>
+                    <Button
+                        isDisabled={!data.PRODUCTID || !data.EMPLOYEEID}
+                        color="primary"
+                        onPress={onOpen}
+                    >
                         Add Component
                     </Button>
 
@@ -450,7 +408,7 @@ export default function AddAsset() {
                     hideCloseButton
                     isOpen={isOpen}
                     onOpenChange={onOpenChange}
-                    size="xl"
+                    size="2xl"
                 >
                     <ModalContent>
                         {(onClose) => (
@@ -489,6 +447,7 @@ export default function AddAsset() {
                                     />
                                     <Button
                                         color="primary"
+                                        isDisabled={!selectedComponentId}
                                         onPress={handleAddComponent}
                                     >
                                         Add
@@ -496,17 +455,17 @@ export default function AddAsset() {
 
                                     <Table aria-label="Components Table">
                                         <TableHeader>
-                                            <TableColumn>
+                                            {/* <TableColumn>
                                                 ASSETCOMPNETID
+                                            </TableColumn> */}
+                                            <TableColumn>
+                                                Component Name
                                             </TableColumn>
                                             <TableColumn>
-                                                ASSETCOMPONENTNAME
+                                                Description
                                             </TableColumn>
                                             <TableColumn>
-                                                DESCRIPTION
-                                            </TableColumn>
-                                            <TableColumn>
-                                                SYSTEMCOMPONENTID
+                                                System Component ID
                                             </TableColumn>
                                         </TableHeader>
                                         <TableBody emptyContent="No rows to display.">
@@ -517,11 +476,11 @@ export default function AddAsset() {
                                                             component.ASSETCOMPNETID
                                                         }
                                                     >
-                                                        <TableCell>
+                                                        {/* <TableCell>
                                                             {
                                                                 component.ASSETCOMPNETID
                                                             }
-                                                        </TableCell>
+                                                        </TableCell> */}
                                                         <TableCell>
                                                             {
                                                                 component.ASSETCOMPONENTNAME
@@ -554,30 +513,18 @@ export default function AddAsset() {
                                     <Button
                                         color="primary"
                                         onPress={() => {
-                                            // Close the modal first
-                                            onClose();
-
-                                            // Update COMPONENT field with both base and added components
                                             setData(
                                                 "COMPONENT",
-                                                JSON.stringify([
-                                                    ...componentChips.map((c) =>
-                                                        c.trim()
-                                                    ), // Base components
-                                                    ...addedComponents.map(
-                                                        (comp) =>
-                                                            comp.SYSTEMCOMPONENTID
-                                                    ), // Added components
-                                                ])
+                                                addedComponents
                                             );
-
-                                            // Show a success toast notification
+                                            setData(
+                                                "WITHCOMPONENTS",
+                                                addedComponents.length > 0
+                                            );
+                                            onClose();
                                             toast.success(
-                                                "Components successfully added to the asset."
+                                                "Components added successfully."
                                             );
-
-                                            // Optionally, trigger the submit form action here if you want to directly submit the form after closing the modal
-                                            // submit(); // Uncomment if you want the form to be submitted automatically after closing the modal
                                         }}
                                     >
                                         Continue

@@ -15,26 +15,12 @@ class ComponentDetail extends Model
     protected $fillable = [
         'EMPLOYEEID',
         'PRODUCTID',
-        'ASSETCOMPONENTID',
+        'ASSETCOMPNETID',
         'COMPONENTNUMBER',
         'SYSTEMCOMPONENTID',
         'COMPONENTDESCRIPTION',
+        'ASSETNO',
     ];
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class, 'PRODUCTID', 'PRODUCTID');
-    }
-
-    public function employee()
-    {
-        return $this->belongsTo(Employee::class, 'EMPLOYEEID', 'EMPLOYEEID');
-    }
-
-    public function assetComponent()
-    {
-        return $this->belongsTo(AssetComponent::class, 'ASSETCOMPONENTID', 'ASSETCOMPONENTID');
-    }
 
     /**
      * Automatically assign the next available COMPONENTNUMBER
@@ -48,5 +34,10 @@ class ComponentDetail extends Model
 
             $component->COMPONENTNUMBER = $max ? $max + 1 : 1;
         });
+    }
+
+    public function assetComponent()
+    {
+        return $this->belongsTo(AssetComponent::class, 'ASSETCOMPNETID', 'ASSETCOMPNETID');
     }
 }

@@ -93,13 +93,9 @@ export default function EditAsset() {
         setData("PRODUCTID", productId);
         setData("DESCRIPTION", product?.DESCRIPTION?.trim() || "");
 
-        // Fallback to assetDetail.asset.employee.EMPLOYEEID if EMPLOYEEID not available
-        const employeeId =
-            assetDetail?.asset?.employee?.EMPLOYEEID || data.EMPLOYEEID;
-
         const componentId = product?.asset_component?.ASSETCOMPNETID;
         const assetParts = [
-            employeeId,
+            data.EMPLOYEEID,
             productId,
             componentId ? componentId : null,
             assetDetail.ASSETNUMBER,
@@ -153,16 +149,34 @@ export default function EditAsset() {
         setLoading(true);
 
         try {
+            const formData = new FormData();
+
+            // Append all scalar fields
+            Object.entries(data).forEach(([key, value]) => {
+                if (key !== "IMAGEPATH" && key !== "COMPONENT") {
+                    formData.append(key, value ?? "");
+                }
+            });
+
+            // Append image files (new images)
+            imageFiles.forEach((file, index) => {
+                formData.append(`new_images[${index}]`, file);
+            });
+
+            // Append existing images (retain)
+            formData.append("existing_images", JSON.stringify(existingImages));
+
+            // Append components
+            formData.append("COMPONENT", JSON.stringify(components));
+            formData.append(
+                "WITHCOMPONENTS",
+                addedComponents.length > 0 ? "1" : "0"
+            );
+            formData.append("_method", "PUT");
+
             router.post(
                 route("assetsextended.update", assetDetail.ASSETNO),
-                {
-                    ...data,
-                    COMPONENT: components,
-                    WITHCOMPONENTS: addedComponents.length > 0,
-                    existing_images: JSON.stringify(existingImages),
-                    new_images: imageFiles,
-                    _method: "PUT",
-                },
+                formData,
                 {
                     forceFormData: true,
                     preserveScroll: true,
@@ -179,6 +193,7 @@ export default function EditAsset() {
             setLoading(false);
         }
     };
+
 
     const [imagePreviews, setImagePreviews] = useState([]);
     const [imageFiles, setImageFiles] = useState([]);
@@ -241,8 +256,9 @@ export default function EditAsset() {
                 <h2 className="text-xl font-bold mt-4">{title}</h2>
                 <p className="text-gray-600 mb-4">{description}</p>
                 <Form
+                    encType="multipart/form-data"
                     onSubmit={handleSubmit}
-                    className="w-full mx-auto space-y-4"
+                    className="w-full max-w-4xl mx-auto space-y-4"
                 >
                     <div className="flex w-full gap-4">
                         <Input
