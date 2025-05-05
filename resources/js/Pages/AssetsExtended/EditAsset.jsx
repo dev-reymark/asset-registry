@@ -19,6 +19,8 @@ import {
     Select,
     SelectItem,
     Image,
+    Autocomplete,
+    AutocompleteItem,
 } from "@heroui/react";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
@@ -39,7 +41,7 @@ export default function EditAsset() {
         title,
         description,
     } = usePage().props;
-    console.log("Asset Detail: ", assetDetail);
+    // console.log("Asset Detail: ", assetDetail);
     const [loading, setLoading] = useState(false);
     const {
         isOpen: isComponentModalOpen,
@@ -250,23 +252,24 @@ export default function EditAsset() {
                             value={employeeName}
                             isReadOnly
                         />
-                        <Select
+                        <Autocomplete
                             label="Select Product"
-                            selectedKeys={[data.PRODUCTID]}
-                            onSelectionChange={(key) =>
-                                setData("PRODUCTID", key.currentKey)
-                            }
+                            selectedKey={data.PRODUCTID ?? null}
+                            onSelectionChange={(key) => {
+                                setData("PRODUCTID", key);
+                                handleProductChange({ target: { value: key } });
+                            }}
                             onChange={handleProductChange}
                         >
                             {products.map((product) => (
-                                <SelectItem
+                                <AutocompleteItem
                                     key={product.PRODUCTID}
                                     value={product.PRODUCTID}
                                 >
                                     {product.DESCRIPTION}
-                                </SelectItem>
+                                </AutocompleteItem>
                             ))}
-                        </Select>
+                        </Autocomplete>
                     </div>
                     <div className="w-full flex gap-4">
                         <Input
@@ -343,7 +346,13 @@ export default function EditAsset() {
                         <Input
                             type="date"
                             label="Date Issued"
-                            value={data.DATEISSUUED}
+                            value={
+                                data.DATEISSUUED
+                                    ? new Date(data.DATEISSUUED.trim())
+                                          .toISOString()
+                                          .split("T")[0]
+                                    : ""
+                            }
                             onChange={(e) =>
                                 setData("DATEISSUUED", e.target.value)
                             }

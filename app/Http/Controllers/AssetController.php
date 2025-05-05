@@ -6,7 +6,9 @@ use App\Exports\AssetsExport;
 use App\Imports\AssetsImport;
 use App\Models\ArchivedAssetDetail;
 use App\Models\Asset;
+use App\Models\AssetComponent;
 use App\Models\AssetDetail;
+use App\Models\ComponentDetail;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
@@ -124,11 +126,17 @@ class AssetController extends Controller
      */
     public function show($id): Response
     {
-        $asset = Asset::with(['employee.workstation', 'assetType', 'assetComponents'])->findOrFail($id);
+        $asset = Asset::with([
+            'employee.department',
+            'employee.location'
+        ])->findOrFail($id);
 
         $asset->load([
             'assetDetails' => function ($q) {
-                $q->where('archived', false);
+                $q->where('archived', false)->with([
+                    'location',
+                    'componentDetails.assetComponent'
+                ]);
             }
         ]);
 
@@ -250,18 +258,21 @@ class AssetController extends Controller
         // Fetch the asset detail and related data
         $assetDetail = AssetDetail::where('ASSETID', $assetId)
             ->where('ASSETNO', $assetNo)
-            ->with('asset.employee')
+            ->with('asset.employee',  'componentDetails.assetComponent', 'location')
             ->firstOrFail();
 
         // Fetch employee details
         $employee = Employee::findOrFail($assetDetail->EMPLOYEEID);
-
         $products = Product::all();
+        $locations = Location::all();
+        $assetcomponents = AssetComponent::all();
 
         return Inertia::render('Assets/EditAsset', [
             'assetDetail' => $assetDetail,
             'employee' => $employee,
             'products' => $products,
+            'locations' => $locations,
+            'assetcomponents' => $assetcomponents,
             'title' => 'Edit Asset',
             'description' => 'Update asset details',
         ]);
@@ -269,9 +280,8 @@ class AssetController extends Controller
 
     public function update(Request $request, $assetId, $assetNo)
     {
-        // Log the request
-        Log::info($request);
-
+        Log::info("=== Incoming Update Request ===");
+        Log::info($request->all());
         Log::info("Attempting to update asset detail with ASSETNO: $assetNo within ASSETID: $assetId");
 
         // Validate incoming request
@@ -282,7 +292,8 @@ class AssetController extends Controller
             'SERIALNO' => 'nullable|string|unique:AssetDetails,SERIALNO,' . $assetNo . ',ASSETNO',
             'ISSUEDTO' => 'nullable|string',
             'DATEISSUUED' => 'nullable|date',
-            'IMAGEPATH' => 'nullable|string',
+            'IMAGEPATH' => 'nullable|array',
+            'IMAGEPATH.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'SERIALTYPE' => 'nullable|string',
             'STATUS' => 'nullable|string',
             'ASSETFROM' => 'nullable|string',
@@ -290,16 +301,23 @@ class AssetController extends Controller
             'WORKSTAION' => 'nullable|string',
             'TYPESIZE' => 'nullable|string',
             'NOPRINT' => 'nullable|integer',
-            'COMPONENT' => 'nullable|string',
-            'WITHCOMPONENTS' => 'nullable|integer',
+            'COMPONENT' => 'nullable|array',
+            'COMPONENT.*.COMPONENTDESCRIPTION' => 'nullable|string|max:255',
+            'COMPONENT.*.ASSETTYPEID' => 'nullable|numeric',
+            'COMPONENT.*.ASSETCOMPNETID' => 'nullable|numeric',
+            'COMPONENT.*.SYSTEMCOMPONENTID' => 'nullable|string|max:255',
+            'WITHCOMPONENTS' => 'nullable|boolean',
             'SYSTEMASSETID' => 'nullable|string|unique:AssetDetails,SYSTEMASSETID,' . $assetNo . ',ASSETNO',
             'SYSTEMCOMPONENTID' => 'nullable|string',
+            'LOCATIONID' => 'nullable|integer|exists:location,LOCATIONID',
         ]);
 
         if ($validator->fails()) {
             Log::error('Validation failed: ' . implode(', ', $validator->errors()->all()));
             return redirect()->back()->withErrors($validator)->withInput();
         }
+
+        $validated = $validator->validated(); // ✅ Extract validated data
 
         // Find the specific asset detail
         $assetDetail = AssetDetail::where('ASSETID', $assetId)
@@ -308,6 +326,36 @@ class AssetController extends Controller
 
         Log::info("Found AssetDetail to update: " . json_encode($assetDetail));
 
+        // Handle existing and new images
+        $existingPaths = json_decode($request->input('existing_images'), true) ?? [];
+        $imagePaths = $existingPaths;
+
+        if ($request->hasFile('new_images')) {
+            foreach ($request->file('new_images') as $file) {
+                if ($file->isValid()) {
+                    $fileName = uniqid() . '-' . $file->getClientOriginalName();
+                    $destinationPath = storage_path('app/public/assets');
+
+                    if (!file_exists($destinationPath)) {
+                        mkdir($destinationPath, 0755, true);
+                    }
+
+                    $file->move($destinationPath, $fileName);
+                    $relativePath = 'assets/' . $fileName;
+                    $imagePaths[] = $relativePath;
+
+                    Log::info("Uploaded image: $relativePath");
+                }
+            }
+        }
+
+        // Handle component data
+        $components = $validated['COMPONENT'] ?? [];
+        $withComponents = is_array($components) && count($components) > 0;
+
+        Log::info("Processing components: " . json_encode($components));
+
+        // Update asset detail
         $assetDetail->update([
             'PRODUCTID' => $request->PRODUCTID,
             'DESCRIPTION' => $request->DESCRIPTION,
@@ -315,7 +363,7 @@ class AssetController extends Controller
             'SERIALNO' => $request->SERIALNO,
             'ISSUEDTO' => $request->ISSUEDTO,
             'DATEISSUUED' => $request->DATEISSUUED,
-            'IMAGEPATH' => $request->IMAGEPATH,
+            'IMAGEPATH' => json_encode($imagePaths),
             'SERIALTYPE' => $request->SERIALTYPE,
             'STATUS' => $request->STATUS,
             'ASSETFROM' => $request->ASSETFROM,
@@ -323,13 +371,34 @@ class AssetController extends Controller
             'WORKSTAION' => $request->WORKSTAION,
             'TYPESIZE' => $request->TYPESIZE,
             'NOPRINT' => $request->NOPRINT,
-            'COMPONENT' => $request->COMPONENT,
-            'WITHCOMPONENTS' => $request->WITHCOMPONENTS,
+            'COMPONENT' => null, // Store components separately
+            'WITHCOMPONENTS' => $withComponents,
             'SYSTEMASSETID' => $request->SYSTEMASSETID,
             'SYSTEMCOMPONENTID' => $request->SYSTEMCOMPONENTID,
+            'LOCATIONID' => $request->LOCATIONID,
         ]);
 
-        Log::info("Updated AssetDetail: " . json_encode($assetDetail));
+        Log::info("Asset detail updated: " . json_encode($assetDetail));
+
+        // Clear existing component details for this asset
+        ComponentDetail::where('ASSETNO', $assetNo)->delete();
+        Log::info("Old component details deleted for ASSETNO: $assetNo");
+
+        // Insert updated components
+        foreach ($components as $component) {
+            $created = ComponentDetail::create([
+                'EMPLOYEEID' => $request->EMPLOYEEID,
+                'PRODUCTID' => $request->PRODUCTID,
+                'ASSETNO' => $assetNo,
+                'SYSTEMCOMPONENTID' => $component['SYSTEMCOMPONENTID'] ?? null,
+                'ASSETCOMPNETID' => $component['ASSETCOMPNETID'] ?? null,
+                'COMPONENTDESCRIPTION' => $component['COMPONENTDESCRIPTION'] ?? null,
+            ]);
+
+            Log::info("Inserted ComponentDetail: " . json_encode($created));
+        }
+
+        Log::info("=== Asset update complete ===");
 
         return redirect(route('assets.index'))->with('success', 'Asset detail updated successfully!');
     }

@@ -9,12 +9,14 @@ import {
     ModalContent,
     ModalHeader,
     ModalFooter,
+    Tab,
     Table,
     TableBody,
     TableCell,
     TableColumn,
     TableHeader,
     TableRow,
+    Tabs,
     Textarea,
     useDisclosure,
     Dropdown,
@@ -28,29 +30,31 @@ import { route } from "ziggy-js";
 import { useState } from "react";
 import { statusColors } from "../../Components/Assets/constants/statusConstants";
 import { HiDotsVertical } from "react-icons/hi";
-import { Swiper, SwiperSlide } from "swiper/react";
 
 export default function AssetView() {
-    const { asset } = usePage().props; // Get asset
-    // console.log(asset);
+    const { asset, archivedDetails } = usePage().props; // Get asset
     const userRole = usePage().props.auth?.user?.role;
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [reason, setReason] = useState("");
     const [status, setStatus] = useState("");
     const [condition, setCondition] = useState("");
-    const [selectedAssetDetail, setSelectedAssetDetail] = useState(null);
-
+    const [selectedArchivedDetail, setSelectedArchivedDetail] = useState(null);
     const {
-        isOpen: isOpenAsset,
-        onOpen: onOpenAsset,
-        onClose: onCloseAsset,
+        isOpen: isDetailOpen,
+        onOpen: onDetailOpen,
+        onClose: onDetailClose,
     } = useDisclosure();
 
-    const {
-        isOpen: isComponentModalOpen,
-        onOpen: openComponentModal,
-        onClose: onCloseComponentModal,
-    } = useDisclosure();
+    const viewAssetDetail = (assetNo) => {
+        // console.log(assetNo);
+        const detail = archivedDetails.find((d) => d.ASSETNO === assetNo);
+        if (detail?.archived_detail) {
+            setSelectedArchivedDetail(detail.archived_detail);
+            onDetailOpen();
+        } else {
+            toast.error("Archived detail not found.");
+        }
+    };
 
     const archiveAsset = (assetId, assetNo, reason, status, condition) => {
         if (!reason || !status || !condition) {
@@ -74,6 +78,26 @@ export default function AssetView() {
                     toast.error(
                         "Failed to archive asset. " + (err?.message || "")
                     );
+                },
+            }
+        );
+        router.reload();
+    };
+
+    const restoreAsset = (assetId, assetNo) => {
+        router.post(
+            route("assets.restore", { assetId, assetNo }),
+            {
+                _method: "PUT",
+            },
+            {
+                onSuccess: () => {
+                    toast.success("Asset restored!");
+                    setIsLoading(false); // Stop loading
+                },
+                onError: () => {
+                    toast.error("Failed to restore asset.");
+                    setIsLoading(false); // Stop loading
                 },
             }
         );
@@ -117,36 +141,33 @@ export default function AssetView() {
                         <strong>{asset?.employee?.EMPLOYEENAME}</strong>
                     </p>
                 </div>
-                <div className="flex justify-start items-center gap-2 mb-3">
-                    {/* <ButtonGroup>
-                        <Button
-                            color="primary"
-                            as={Link}
-                            href={route("assets.create", {
-                                id: asset.ASSETSID,
-                            })}
-                        >
-                            Add New Asset
-                        </Button> */}
-                    <Button
-                        as={Link}
-                        color="success"
-                        variant="flat"
-                        href={route("assets.viewEmployeeAssets", {
-                            id: asset.EMPLOYEEID,
-                        })}
-                    >
-                        View to Print
-                    </Button>
-                    {/* </ButtonGroup> */}
-                </div>
 
-                <Table
-                    maxTableHeight={"300px"}
-                    isVirtualized
-                    aria-label="Asset Details table"
-                    isStriped
-                >
+                {userRole === "admin" && (
+                    <div className="flex justify-start items-center gap-2 mb-3">
+                        <ButtonGroup>
+                            <Button
+                                color="primary"
+                                as={Link}
+                                href={route("assets.create", {
+                                    id: asset.ASSETSID,
+                                })}
+                            >
+                                Add New Asset
+                            </Button>
+                            <Button
+                                as={Link}
+                                color="success"
+                                variant="flat"
+                                href={route("assets.viewEmployeeAssets", {
+                                    id: asset.EMPLOYEEID,
+                                })}
+                            >
+                                View to Print
+                            </Button>
+                        </ButtonGroup>
+                    </div>
+                )}
+                <Table isVirtualized aria-label="Asset Details table" isStriped>
                     <TableHeader>
                         <TableColumn>Asset #</TableColumn>
                         <TableColumn>System Asset ID</TableColumn>
@@ -202,17 +223,10 @@ export default function AssetView() {
                                             </Button>
                                         </DropdownTrigger>
                                         <DropdownMenu>
-                                            <DropdownItem
-                                                key="view"
-                                                onPress={() => {
-                                                    setSelectedAssetDetail(
-                                                        detail
-                                                    );
-                                                    onOpenAsset();
-                                                }}
-                                            >
+                                            <DropdownItem key="view" as={Link}>
                                                 View
                                             </DropdownItem>
+
                                             <DropdownItem
                                                 as={Link}
                                                 href={route("assets.edit", {
@@ -244,152 +258,6 @@ export default function AssetView() {
                     </TableBody>
                 </Table>
 
-                <Modal isOpen={isOpenAsset} onClose={onCloseAsset}>
-                    <ModalContent>
-                        <ModalHeader>Asset Details</ModalHeader>
-                        <ModalBody>
-                            {selectedAssetDetail && (
-                                <div className="flex flex-wrap gap-6">
-                                    {selectedAssetDetail.IMAGEPATH && (
-                                        <Swiper
-                                            spaceBetween={10}
-                                            slidesPerView={1}
-                                            className="w-full sm:w-1/2 lg:w-1/3"
-                                        >
-                                            {JSON.parse(
-                                                selectedAssetDetail.IMAGEPATH
-                                            ).map((path, index) => (
-                                                <SwiperSlide key={index}>
-                                                    <img
-                                                        src={`/storage/${path}`}
-                                                        alt={`Asset Image ${
-                                                            index + 1
-                                                        }`}
-                                                        className="object-cover w-full h-48 rounded-lg"
-                                                        onError={(e) =>
-                                                            (e.target.src =
-                                                                "/assets/placeholder.jpg")
-                                                        }
-                                                    />
-                                                </SwiperSlide>
-                                            ))}
-                                        </Swiper>
-                                    )}
-
-                                    <div className="flex-1 space-y-4 text-sm text-gray-700">
-                                        <p>
-                                            <span className="font-semibold">
-                                                Description:
-                                            </span>{" "}
-                                            {selectedAssetDetail.DESCRIPTION}
-                                        </p>
-                                        <p>
-                                            <span className="font-semibold">
-                                                Serial Number:
-                                            </span>{" "}
-                                            {selectedAssetDetail.SERIALNO}
-                                        </p>
-                                        <p>
-                                            <span className="font-semibold">
-                                                Date Issued:
-                                            </span>{" "}
-                                            {selectedAssetDetail.DATEISSUUED?.trim() ??
-                                                "--"}
-                                        </p>
-                                        <p>
-                                            <span className="font-semibold">
-                                                Location:
-                                            </span>{" "}
-                                            {
-                                                selectedAssetDetail.location
-                                                    .LOCATIONNAME
-                                            }
-                                        </p>
-                                        <p>
-                                            <span className="font-semibold">
-                                                Condition:
-                                            </span>{" "}
-                                            {selectedAssetDetail.CONDITIONS ??
-                                                "--"}
-                                        </p>
-                                        <Button
-                                            color="primary"
-                                            variant="light"
-                                            onPress={() => {
-                                                openComponentModal();
-                                            }}
-                                        >
-                                            View components
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </ModalBody>
-
-                        <ModalFooter>
-                            <Button color="primary" onPress={onCloseAsset}>
-                                Close
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
-                </Modal>
-                <Modal
-                    size="3xl"
-                    isOpen={isComponentModalOpen}
-                    onClose={onCloseComponentModal}
-                >
-                    <ModalContent>
-                        <ModalHeader className="flex flex-col gap-1">
-                            Components
-                        </ModalHeader>
-                        <ModalBody>
-                            <Table aria-label="Components Table">
-                                <TableHeader>
-                                    <TableColumn>Component #</TableColumn>
-                                    <TableColumn>Component Name</TableColumn>
-                                    <TableColumn>Description</TableColumn>
-                                    <TableColumn>
-                                        System Component ID
-                                    </TableColumn>
-                                </TableHeader>
-                                <TableBody emptyContent="No components to display.">
-                                    {(
-                                        selectedAssetDetail?.component_details ||
-                                        []
-                                    ).map((component, idx) => (
-                                        <TableRow key={idx}>
-                                            <TableCell>
-                                                {component.COMPONENTNUMBER}
-                                            </TableCell>
-                                            <TableCell>
-                                                {component.asset_component
-                                                    ?.ASSETCOMPONENTNAME ??
-                                                    "--"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {component.COMPONENTDESCRIPTION ??
-                                                    "--"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {component.SYSTEMCOMPONENTID}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </ModalBody>
-
-                        <ModalFooter>
-                            <Button
-                                color="danger"
-                                variant="light"
-                                onPress={onCloseComponentModal}
-                            >
-                                Close
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
-                </Modal>
                 <Modal isOpen={isOpen} onClose={onClose} onOpenChange={onClose}>
                     <ModalContent>
                         <ModalHeader className="text-danger-500">
@@ -436,6 +304,61 @@ export default function AssetView() {
                                 color="danger"
                                 variant="light"
                                 onPress={onClose}
+                            >
+                                Close
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+
+                <Modal
+                    isOpen={isDetailOpen}
+                    onClose={onDetailClose}
+                    onOpenChange={onDetailClose}
+                >
+                    <ModalContent>
+                        <ModalHeader>Asset Details</ModalHeader>
+                        <ModalBody>
+                            <Input
+                                type="date"
+                                isReadOnly
+                                label="Disposed Date"
+                                value={
+                                    selectedArchivedDetail?.created_at
+                                        ? new Date(
+                                              selectedArchivedDetail.created_at
+                                          )
+                                              .toISOString()
+                                              .split("T")[0]
+                                        : ""
+                                }
+                            />
+                            <Input
+                                isReadOnly
+                                label="Reason for disposal"
+                                value={
+                                    selectedArchivedDetail?.archival_reason ||
+                                    ""
+                                }
+                            />
+                            <Textarea
+                                variant="faded"
+                                isReadOnly
+                                label="Asset Status"
+                                value={selectedArchivedDetail?.status || ""}
+                            />
+                            <Textarea
+                                variant="faded"
+                                isReadOnly
+                                label="Asset Condition"
+                                value={selectedArchivedDetail?.conditions || ""}
+                            />
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                color="danger"
+                                variant="flat"
+                                onPress={onDetailClose}
                             >
                                 Close
                             </Button>
