@@ -380,7 +380,7 @@ export default function Assets() {
                                 onPress={openDeclassificationModal}
                                 isDisabled={selectedKeys.size === 0}
                             >
-                                Declassify
+                                Declassification
                             </Button>
                         </ButtonGroup>
                     </div>
@@ -505,7 +505,6 @@ export default function Assets() {
                                                             >
                                                                 View
                                                             </DropdownItem>
-
                                                             <DropdownItem
                                                                 as={Link}
                                                                 href={route(

@@ -9,6 +9,12 @@ use App\Models\ComponentDetail;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -303,7 +309,6 @@ class AssetExtendedController extends Controller
 
         Log::debug('Validated Data:', ['validated' => $validated]);
 
-        // Check if location_id exists and log
         $locationExists = DB::table('location')->where('LOCATIONID', $validated['location_id'])->exists();
         Log::debug('Location Exists:', ['exists' => $locationExists]);
 
@@ -312,21 +317,34 @@ class AssetExtendedController extends Controller
             return redirect()->route('assets.index')->with('error', 'Invalid location.');
         }
 
-        // Wrap in transaction for atomicity
         DB::transaction(function () use ($validated) {
-            $updated = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])
-                ->update([
-                    'EMPLOYEEID' => $validated['employee_id'],
-                    'LOCATIONID' => $validated['location_id'],
-                    'STATUS' => $validated['status'],
-                    'ISSUEDTO' => $validated['employee_id'] ? optional(Employee::find($validated['employee_id']))->EMPLOYEENAME : null,
-                ]);
+            $employee = Employee::where('EMPLOYEEID', $validated['employee_id'])->first();
+            $asset = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
 
-            Log::debug('Number of rows updated:', ['updated' => $updated]);
+            Log::debug('Asset matched for employee:', ['ASSETSID' => optional($asset)->ASSETSID]);
+
+            AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->update([
+                'EMPLOYEEID' => $validated['employee_id'],
+                'LOCATIONID' => $validated['location_id'],
+                'STATUS' => $validated['status'],
+                'ISSUEDTO' => optional($employee)->EMPLOYEENAME,
+                'ASSETID' => optional($asset)->ASSETSID,
+            ]);
+
+            $assetDetails = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->get();
+
+            foreach ($assetDetails as $detail) {
+                $systemAssetId = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
+                $detail->SYSTEMASSETID = $systemAssetId;
+                $detail->save();
+            }
+
+            Log::debug('SYSTEMASSETID updated for assets.');
         });
 
         return redirect()->route('assets.index')->with('success', 'Assets transferred successfully.');
     }
+
 
     public function declassify(Request $request)
     {
@@ -426,4 +444,37 @@ class AssetExtendedController extends Controller
             return redirect()->route('assets.index')->with('error', 'An error occurred while archiving assets.');
         }
     }
+
+    // public function generateQRCodes(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'asset_nos' => 'required|array',
+    //         'asset_nos.*' => 'integer',
+    //     ]);
+
+    //     $assets = Asset::whereIn('ASSETNO', $validated['asset_nos'])->get();
+
+
+    //     // Create QR Code
+    //     $builder = new Builder(
+    //         writer: new PngWriter(),
+    //         writerOptions: [],
+    //         validateResult: false,
+    //         // data: $url,
+    //         encoding: new Encoding('UTF-8'),
+    //         errorCorrectionLevel: ErrorCorrectionLevel::High,
+    //         size: 300,
+    //         margin: 10,
+    //         roundBlockSizeMode: RoundBlockSizeMode::Margin
+    //     );
+
+    //     $result = $builder->build();
+
+    //     return response($result->getString(), 200, ['Content-Type' => 'image/png']);
+
+    //     return response()->json($qrCodes);
+    // }
+
+    // public function viewGeneratedQRCodes()
+    // {}
 }

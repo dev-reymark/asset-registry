@@ -36,8 +36,8 @@ export const TransferAssets = ({
                                 Transfer Assets
                             </h1>
                             <p className="text-sm text-gray-500">
-                                Select a location to transfer the selected
-                                assets.
+                                Select a location, employee and status to
+                                transfer the selected assets.
                             </p>
                         </ModalHeader>
                         <ModalBody>

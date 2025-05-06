@@ -1,7 +1,7 @@
 import { Link } from "@inertiajs/react";
 import Authenticated from "../../Layouts/Authenticated";
 import { Button } from "@heroui/react";
-export default function EmployeeAssetRegistry({ employee }) {
+export default function ViewToPrint({ employee }) {
     // console.log(employee); // Check if employee is not null
 
     const assets = employee?.assets ?? [];

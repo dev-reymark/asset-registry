@@ -73,6 +73,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/assets/bulk-archive', [AssetExtendedController::class, 'bulkArchive'])->name('assetsextended.bulkArchive');
     Route::get('/asset/{assetNo}/edit', [AssetExtendedController::class, 'edit'])->name('assetsextended.edit');
     Route::put('/asset/{assetNo}', [AssetExtendedController::class, 'update'])->name('assetsextended.update');
+    Route::post('/assets/generate-qrcodes', [AssetExtendedController::class, 'generateQRCodes'])->name('assetsextended.generateQRCodes');
 
     // Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['role:admin']);
     Route::resource('assetComponents', AssetComponentController::class)->middleware(['role:admin']);

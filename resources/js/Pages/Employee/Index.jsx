@@ -18,6 +18,7 @@ import { GoArchive } from "react-icons/go";
 import { CiSearch } from "react-icons/ci";
 import { useState } from "react";
 import { useDebounce } from "../../hooks/useDebounce";
+import { TbDatabaseImport } from "react-icons/tb";
 
 export default function Employees() {
     const { employees, title, filters } = usePage().props; // Get employees data
@@ -182,6 +183,9 @@ export default function Employees() {
                                     href={route("assets.showForm")}
                                     color="success"
                                     variant="flat"
+                                    startContent={
+                                        <TbDatabaseImport className="size-6" />
+                                    }
                                 >
                                     Import Data
                                 </Button>
