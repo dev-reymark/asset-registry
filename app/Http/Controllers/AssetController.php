@@ -286,6 +286,7 @@ class AssetController extends Controller
 
         // Validate incoming request
         $validator = Validator::make($request->all(), [
+            'EMPLOYEEID' => 'nullable|numeric',
             'PRODUCTID' => 'nullable|string',
             'DESCRIPTION' => 'nullable|string',
             'MODEL' => 'nullable|string',
@@ -358,6 +359,7 @@ class AssetController extends Controller
 
         // Update asset detail
         $assetDetail->update([
+            'EMPLOYEEID' => $request->EMPLOYEEID,
             'PRODUCTID' => $request->PRODUCTID,
             'DESCRIPTION' => $request->DESCRIPTION,
             'MODEL' => $request->MODEL,

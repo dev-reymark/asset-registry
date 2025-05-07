@@ -336,30 +336,46 @@ class AssetExtendedController extends Controller
             $employee = Employee::where('EMPLOYEEID', $validated['employee_id'])->first();
             $asset = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
 
-            Log::debug('Asset matched for employee:', ['ASSETSID' => optional($asset)->ASSETSID]);
+            // Step 1: Get old EMPLOYEEIDs before update
+            $oldEmployeeIds = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])
+                ->pluck('EMPLOYEEID')
+                ->unique()
+                ->filter(fn($id) => $id != $validated['employee_id']);
 
+            // Step 2: Update asset ownership
             AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->update([
                 'EMPLOYEEID' => $validated['employee_id'],
                 'LOCATIONID' => $validated['location_id'],
                 'STATUS' => $validated['status'],
-                'ISSUEDTO' => optional($employee)->EMPLOYEENAME,
+                'ISSUEDTO' => optional($employee)->EMPNO,
                 'ASSETID' => optional($asset)->ASSETSID,
             ]);
+
+            // Step 3: Reorder old employee asset numbers
+            foreach ($oldEmployeeIds as $oldId) {
+                AssetDetail::reorderAssetNumbersForEmployee($oldId);
+            }
+
+            // Step 4: Manually reassign ASSETNUMBER to new employee's transferred assets
+            $maxAssetNumber = AssetDetail::where('EMPLOYEEID', $validated['employee_id'])
+                ->whereNotIn('ASSETNO', $validated['asset_nos']) // exclude transferred ones
+                ->where('archived', false)
+                ->max('ASSETNUMBER') ?? 0;
 
             $assetDetails = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->get();
 
             foreach ($assetDetails as $detail) {
-                $systemAssetId = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
-                $detail->SYSTEMASSETID = $systemAssetId;
+                $detail->ASSETNUMBER = ++$maxAssetNumber;
+                $detail->SYSTEMASSETID = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
                 $detail->save();
             }
 
-            Log::debug('SYSTEMASSETID updated for assets.');
+            // Step 5: Final cleanup reorder for the new employee (just in case)
+            AssetDetail::reorderAssetNumbersForEmployee($validated['employee_id']);
         });
 
         return redirect()->route('assets.index')->with('success', 'Assets transferred successfully.');
     }
-
 
     public function declassify(Request $request)
     {

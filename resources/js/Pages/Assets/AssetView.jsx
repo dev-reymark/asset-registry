@@ -148,6 +148,7 @@ export default function AssetView() {
                     isStriped
                 >
                     <TableHeader>
+                        {/* <TableColumn>Employee ID</TableColumn> */}
                         <TableColumn>Asset #</TableColumn>
                         <TableColumn>System Asset ID</TableColumn>
                         <TableColumn>Description</TableColumn>
@@ -160,6 +161,7 @@ export default function AssetView() {
                     <TableBody emptyContent={"No rows to display."}>
                         {asset.asset_details.map((detail) => (
                             <TableRow key={detail.ASSETNO}>
+                                {/* <TableCell>{detail.EMPLOYEEID}</TableCell> */}
                                 <TableCell>{detail.ASSETNUMBER}</TableCell>
                                 <TableCell>{detail.SYSTEMASSETID}</TableCell>
                                 <TableCell>{detail.DESCRIPTION}</TableCell>
