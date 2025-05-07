@@ -116,8 +116,19 @@ export default function AddAsset() {
         setData("ISSUEDTO", employee?.EMPLOYEENAME?.trim() || "");
     };
 
-    const handleProductChange = (e) => {
-        const selectedProductId = e.target.value;
+    // const handleProductChange = (e) => {
+    //     const selectedProductId = e.target.value;
+    //     const product = products.find(
+    //         (p) => String(p.PRODUCTID) === String(selectedProductId)
+    //     );
+
+    //     setSelectedProduct(product);
+    //     setData("PRODUCTID", selectedProductId);
+    //     setData("DESCRIPTION", product?.DESCRIPTION?.trim() || "");
+    // };
+
+    const handleProductChange = (selectedKey) => {
+        const selectedProductId = selectedKey;
         const product = products.find(
             (p) => String(p.PRODUCTID) === String(selectedProductId)
         );
@@ -126,6 +137,7 @@ export default function AddAsset() {
         setData("PRODUCTID", selectedProductId);
         setData("DESCRIPTION", product?.DESCRIPTION?.trim() || "");
     };
+
     const handleStatusChange = (e) => setData("STATUS", e.target.value);
     const handleConditionChange = (e) => setData("CONDITIONS", e.target.value);
 
@@ -255,25 +267,24 @@ export default function AddAsset() {
                                 </AutocompleteItem>
                             ))}
                         </Autocomplete>
-                        <Select
+                        <Autocomplete
                             isRequired
                             label="Select Product"
-                            value={data.PRODUCTID}
-                            onChange={handleProductChange}
+                            // value={data.PRODUCTID}
+                            // onChange={handleProductChange}
+                            onSelectionChange={handleProductChange}
+                            selectedKey={data.PRODUCTID}
                         >
-                            <SelectItem value="" isReadOnly>
-                                Select a product
-                            </SelectItem>
-
                             {products.map((product) => (
-                                <SelectItem
+                                <AutocompleteItem
                                     key={product.PRODUCTID}
                                     value={product.PRODUCTID}
+                                    textValue={product.DESCRIPTION}
                                 >
                                     {(product.DESCRIPTION || "").trim()}
-                                </SelectItem>
+                                </AutocompleteItem>
                             ))}
-                        </Select>
+                        </Autocomplete>
 
                         <Input
                             label="Description"

@@ -56,8 +56,7 @@ class AssetExtendedController extends Controller
 
     public function store(Request $request)
     {
-        Log::debug('Incoming request data:', ['data' => $request->all()]);
-        // Log::debug('IMAGEPATH from file()', ['file' => $request->file('IMAGEPATH')]);
+        Log::info('Incoming asset detail request', ['data' => $request->all()]);
 
         $validated = $request->validate([
             'ASSETSID' => 'required|exists:Assets,ASSETSID',
@@ -67,7 +66,8 @@ class AssetExtendedController extends Controller
             'PRODUCTID' => 'nullable|exists:products,PRODUCTID',
             'DESCRIPTION' => 'nullable|string|max:255',
             'MODEL' => 'nullable|string|max:255',
-            'SERIALNO' => 'nullable|unique:AssetDetails,SERIALNO',
+            // 'SERIALNO' => 'nullable|unique:AssetDetails,SERIALNO',
+            'SERIALNO' => 'nullable|string',
             'ISSUEDTO' => 'nullable|string|max:255',
             'DATEISSUUED' => 'nullable|date',
             'IMAGEPATH' => 'nullable|array',
@@ -89,21 +89,24 @@ class AssetExtendedController extends Controller
             'LOCATIONID' => 'nullable|integer|exists:location,LOCATIONID',
         ]);
 
+        Log::info('Validated request data', ['validated' => $validated]);
+
         DB::beginTransaction();
 
         try {
-
             $imagePaths = [];
 
             if ($request->hasFile('IMAGEPATH')) {
+                Log::info('Processing uploaded images');
+
                 foreach ($request->file('IMAGEPATH') as $file) {
                     if ($file->isValid()) {
                         $fileName = uniqid() . '-' . $file->getClientOriginalName();
                         $destinationPath = storage_path('app/public/assets');
 
-                        // Ensure the directory exists before moving the file
                         if (!file_exists($destinationPath)) {
-                            mkdir($destinationPath, 0755, true);  // Creates the directory with appropriate permissions
+                            mkdir($destinationPath, 0755, true);
+                            Log::info('Created assets directory', ['path' => $destinationPath]);
                         }
 
                         $file->move($destinationPath, $fileName);
@@ -116,13 +119,17 @@ class AssetExtendedController extends Controller
                         }
 
                         $imagePaths[] = $relativePath;
+                        Log::info('Image uploaded', ['path' => $relativePath]);
+                    } else {
+                        Log::warning('Skipped invalid image file');
                     }
                 }
             }
 
             $components = $validated['COMPONENT'] ?? [];
+            Log::info('Component data prepared', ['components_count' => count($components)]);
 
-            AssetDetail::create([
+            $assetDetail = AssetDetail::create([
                 'EMPLOYEEID' => $validated['EMPLOYEEID'] ?? null,
                 'ASSETID' => $validated['ASSETSID'],
                 'ASSETNO' => $validated['ASSETNO'] ?? null,
@@ -146,22 +153,29 @@ class AssetExtendedController extends Controller
                 'LOCATIONID' => $validated['LOCATIONID'] ?? null,
             ]);
 
-            foreach ($components as $component) {
-                ComponentDetail::create([
+            Log::info('AssetDetail record created', ['id' => $assetDetail->id]);
+
+            foreach ($components as $index => $component) {
+                $componentDetail = ComponentDetail::create([
                     'EMPLOYEEID' => $validated['EMPLOYEEID'],
                     'PRODUCTID' => $validated['PRODUCTID'],
                     'ASSETNO' => $validated['ASSETNO'],
                     'SYSTEMCOMPONENTID' => $component['SYSTEMCOMPONENTID'] ?? null,
                     'ASSETCOMPNETID' => $component['ASSETCOMPNETID'] ?? null,
-                    'COMPONENTDESCRIPTION' => $component['DESCRIPTION'] ?? null
+                    'COMPONENTDESCRIPTION' => $component['DESCRIPTION'] ?? null,
                 ]);
+                Log::info("ComponentDetail #{$index} created", ['id' => $componentDetail->id]);
             }
 
             DB::commit();
+            Log::info('Asset detail and components stored successfully');
             return redirect()->route('assetsextended.create')->with('success', 'Asset detail added successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Asset Store Error', ['message' => $e->getMessage()]);
+            Log::error('Asset Store Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->route('assetsextended.create')->with('error', 'An error occurred while adding asset details.');
         }
     }
@@ -199,7 +213,8 @@ class AssetExtendedController extends Controller
             'PRODUCTID' => 'nullable|exists:products,PRODUCTID',
             'DESCRIPTION' => 'nullable|string|max:255',
             'MODEL' => 'nullable|string|max:255',
-            'SERIALNO' => 'nullable|unique:AssetDetails,SERIALNO,' . $assetNo . ',ASSETNO',
+            // 'SERIALNO' => 'nullable|unique:AssetDetails,SERIALNO,' . $assetNo . ',ASSETNO',
+            'SERIALNO' => 'nullable|string',
             'ISSUEDTO' => 'nullable|string|max:255',
             'DATEISSUUED' => 'nullable|date',
             'IMAGEPATH' => 'nullable|array',
