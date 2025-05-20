@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AssetDetail extends Model
 {
     use HasFactory;
+    use LogsHistory;
 
     protected $table = 'AssetDetails';
     protected $primaryKey = 'ASSETNO';
@@ -139,5 +141,10 @@ class AssetDetail extends Model
     public function componentDetails()
     {
         return $this->hasMany(ComponentDetail::class, 'ASSETNO', 'ASSETNO');
+    }
+
+    public function histories()
+    {
+        return $this->morphMany(History::class, 'model', 'model_type', 'model_id');
     }
 }

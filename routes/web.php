@@ -74,7 +74,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/asset/{assetNo}/edit', [AssetExtendedController::class, 'edit'])->name('assetsextended.edit');
     Route::put('/asset/{assetNo}', [AssetExtendedController::class, 'update'])->name('assetsextended.update');
     Route::post('/assets/generate-qrcodes', [AssetExtendedController::class, 'generateQRCodes'])->name('assetsextended.generateQRCodes');
-
+    // Route::get('/assets/{id}', [AssetController::class, 'showHistory'])->name('assetsextended.history');
+    Route::get('/history', [AssetExtendedController::class, 'indexHistory'])->name('assetsextended.history');
     // Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['role:admin']);
     Route::resource('assetComponents', AssetComponentController::class)->middleware(['role:admin']);
     // Department Routes
@@ -85,7 +86,6 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('workstations', WorkStationController::class)->middleware(RoleMiddleware::class . ':admin');
     // Products
     Route::resource('products', ProductController::class)->middleware(RoleMiddleware::class . ':admin');
-
 });
 
 Route::get('/assets/{systemAssetId}/qr', [AssetController::class, 'generateQrCode'])->name('assets.qr');

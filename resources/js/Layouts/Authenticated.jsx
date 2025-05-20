@@ -5,6 +5,7 @@ import { Button } from "@heroui/react";
 import {
     FaBoxOpen,
     FaDesktop,
+    FaHistory,
     FaMapMarkerAlt,
     FaProductHunt,
 } from "react-icons/fa";
@@ -139,6 +140,17 @@ export default function Authenticated({ children }) {
                     >
                         <BiSolidComponent className="w-5 h-5" />
                         <span className="ml-4">Product Components</span>
+                    </Link>
+                    <Link
+                        className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
+                            route().current("assetsextended.history")
+                                ? "bg-indigo-600"
+                                : "hover:bg-indigo-600"
+                        }`}
+                        href={route("assetsextended.history")}
+                    >
+                        <FaHistory className="w-5 h-5" />
+                        <span className="ml-4">Audit Log</span>
                     </Link>
                     {/* <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${

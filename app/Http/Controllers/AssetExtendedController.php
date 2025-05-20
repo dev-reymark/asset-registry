@@ -7,6 +7,7 @@ use App\Models\AssetComponent;
 use App\Models\AssetDetail;
 use App\Models\ComponentDetail;
 use App\Models\Employee;
+use App\Models\History;
 use App\Models\Location;
 use App\Models\Product;
 use Endroid\QrCode\Builder\Builder;
@@ -315,67 +316,145 @@ class AssetExtendedController extends Controller
         Log::debug('Transfer request data:', ['data' => $request->all()]);
 
         $validated = $request->validate([
-            'asset_nos' => 'array',
-            'asset_nos.*' => 'integer',
-            'employee_id' => 'integer|exists:employee,EMPLOYEEID',
-            'location_id' => 'integer|exists:location,LOCATIONID',
-            'status' => 'string',
+            'asset_nos'    => 'required|array',
+            'asset_nos.*'  => 'integer',
+            'employee_id'  => 'required|integer|exists:employee,EMPLOYEEID',
+            'location_id'  => 'required|integer|exists:location,LOCATIONID',
+            'status'       => 'required|string',
         ]);
-
-        Log::debug('Validated Data:', ['validated' => $validated]);
-
-        $locationExists = DB::table('location')->where('LOCATIONID', $validated['location_id'])->exists();
-        Log::debug('Location Exists:', ['exists' => $locationExists]);
-
-        if (!$locationExists) {
-            Log::error('Location ID does not exist.');
-            return redirect()->route('assets.index')->with('error', 'Invalid location.');
-        }
 
         DB::transaction(function () use ($validated) {
             $employee = Employee::where('EMPLOYEEID', $validated['employee_id'])->first();
-            $asset = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
+            $asset    = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
 
-            // Step 1: Get old EMPLOYEEIDs before update
+            // Get previous employee IDs for logging
             $oldEmployeeIds = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])
                 ->pluck('EMPLOYEEID')
                 ->unique()
                 ->filter(fn($id) => $id != $validated['employee_id']);
 
-            // Step 2: Update asset ownership
+            // Update asset details
             AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->update([
-                'EMPLOYEEID' => $validated['employee_id'],
-                'LOCATIONID' => $validated['location_id'],
-                'STATUS' => $validated['status'],
-                'ISSUEDTO' => optional($employee)->EMPNO,
-                'ASSETID' => optional($asset)->ASSETSID,
+                'EMPLOYEEID'  => $validated['employee_id'],
+                'LOCATIONID'  => $validated['location_id'],
+                'STATUS'      => $validated['status'],
+                'ISSUEDTO'    => optional($employee)->EMPNO,
+                'ASSETID'     => optional($asset)->ASSETSID,
             ]);
 
-            // Step 3: Reorder old employee asset numbers
+            // Reorder asset numbers for old employees
             foreach ($oldEmployeeIds as $oldId) {
                 AssetDetail::reorderAssetNumbersForEmployee($oldId);
             }
 
-            // Step 4: Manually reassign ASSETNUMBER to new employee's transferred assets
+            // Reorder for new employee
             $maxAssetNumber = AssetDetail::where('EMPLOYEEID', $validated['employee_id'])
-                ->whereNotIn('ASSETNO', $validated['asset_nos']) // exclude transferred ones
+                ->whereNotIn('ASSETNO', $validated['asset_nos'])
                 ->where('archived', false)
                 ->max('ASSETNUMBER') ?? 0;
 
             $assetDetails = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->get();
 
             foreach ($assetDetails as $detail) {
-                $detail->ASSETNUMBER = ++$maxAssetNumber;
-                $detail->SYSTEMASSETID = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
+                $oldData = $detail->only(['EMPLOYEEID', 'LOCATIONID', 'STATUS', 'ASSETNUMBER', 'SYSTEMASSETID']);
+
+                $detail->ASSETNUMBER    = ++$maxAssetNumber;
+                $detail->SYSTEMASSETID  = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
                 $detail->save();
+
+                // Log history
+                if (method_exists($detail, 'logAction')) {
+                    $detail->logAction('transfer', [
+                        'from' => $oldData,
+                        'to'   => $detail->only(['EMPLOYEEID', 'LOCATIONID', 'STATUS', 'ASSETNUMBER', 'SYSTEMASSETID']),
+                    ]);
+                }
             }
 
-            // Step 5: Final cleanup reorder for the new employee (just in case)
+            // Final reorder for new employee
             AssetDetail::reorderAssetNumbersForEmployee($validated['employee_id']);
         });
 
         return redirect()->route('assets.index')->with('success', 'Assets transferred successfully.');
     }
+
+    // public function transfer(Request $request, $id)
+    // {
+    //     Log::debug('Transfer request data:', ['data' => $request->all()]);
+
+    //     $validated = $request->validate([
+    //         'asset_nos' => 'array',
+    //         'asset_nos.*' => 'integer',
+    //         'employee_id' => 'integer|exists:employee,EMPLOYEEID',
+    //         'location_id' => 'integer|exists:location,LOCATIONID',
+    //         'status' => 'string',
+    //     ]);
+
+    //     Log::debug('Validated Data:', ['validated' => $validated]);
+
+    //     $locationExists = DB::table('location')->where('LOCATIONID', $validated['location_id'])->exists();
+    //     Log::debug('Location Exists:', ['exists' => $locationExists]);
+
+    //     if (!$locationExists) {
+    //         Log::error('Location ID does not exist.');
+    //         return redirect()->route('assets.index')->with('error', 'Invalid location.');
+    //     }
+
+    //     DB::transaction(function () use ($validated) {
+    //         $employee = Employee::where('EMPLOYEEID', $validated['employee_id'])->first();
+    //         $asset = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
+
+    //         // Step 1: Get old EMPLOYEEIDs before update
+    //         $oldEmployeeIds = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])
+    //             ->pluck('EMPLOYEEID')
+    //             ->unique()
+    //             ->filter(fn($id) => $id != $validated['employee_id']);
+
+    //         // Step 2: Update asset ownership
+    //         AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->update([
+    //             'EMPLOYEEID' => $validated['employee_id'],
+    //             'LOCATIONID' => $validated['location_id'],
+    //             'STATUS' => $validated['status'],
+    //             'ISSUEDTO' => optional($employee)->EMPNO,
+    //             'ASSETID' => optional($asset)->ASSETSID,
+    //         ]);
+
+    //         // Step 3: Reorder old employee asset numbers
+    //         foreach ($oldEmployeeIds as $oldId) {
+    //             AssetDetail::reorderAssetNumbersForEmployee($oldId);
+    //         }
+
+    //         // Step 4: Manually reassign ASSETNUMBER to new employee's transferred assets
+    //         $maxAssetNumber = AssetDetail::where('EMPLOYEEID', $validated['employee_id'])
+    //             ->whereNotIn('ASSETNO', $validated['asset_nos']) // exclude transferred ones
+    //             ->where('archived', false)
+    //             ->max('ASSETNUMBER') ?? 0;
+
+    //         $assetDetails = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->get();
+
+    //         foreach ($assetDetails as $detail) {
+    //             $detail->ASSETNUMBER = ++$maxAssetNumber;
+    //             $detail->SYSTEMASSETID = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
+    //             $detail->save();
+    //         }
+
+    //         // Step 5: Final cleanup reorder for the new employee (just in case)
+    //         AssetDetail::reorderAssetNumbersForEmployee($validated['employee_id']);
+    //     });
+
+    //     $asset = Asset::findOrFail($id);
+    //     $oldLocation = $asset->location;
+
+    //     $asset->update(['location' => $request->new_location]);
+
+    //     $asset->logAction('transfer', [
+    //         'from' => ['location' => $oldLocation],
+    //         'to'   => ['location' => $request->new_location],
+    //     ]);
+
+
+    //     return redirect()->route('assets.index')->with('success', 'Assets transferred successfully.');
+    // }
 
     public function declassify(Request $request)
     {
@@ -508,4 +587,31 @@ class AssetExtendedController extends Controller
 
     // public function viewGeneratedQRCodes()
     // {}
+
+    // In a controller
+
+    // public function showHistory($id)
+    // {
+    //     $asset = AssetDetail::findOrFail($id);
+
+    //     $histories = History::where('model_type', AssetDetail::class)
+    //         ->where('model_id', $asset->getKey())
+    //         ->with('user')
+    //         ->latest()
+    //         ->get();
+
+    //     return Inertia::render('History/LogsHistory', [
+    //         'asset' => $asset,
+    //         'histories' => $histories,
+    //     ]);
+    // }
+
+    public function indexHistory()
+    {
+        $histories = History::latest()->paginate(5);
+
+        return Inertia::render('History/LogsHistory', [
+            'histories' => $histories,
+        ]);
+    }
 }
