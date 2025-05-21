@@ -143,11 +143,11 @@ export default function Authenticated({ children }) {
                     </Link>
                     <Link
                         className={`flex items-center px-4 py-2 text-base text-white rounded-lg ${
-                            route().current("assetsextended.history")
+                            route().current("history.index")
                                 ? "bg-indigo-600"
                                 : "hover:bg-indigo-600"
                         }`}
-                        href={route("assetsextended.history")}
+                        href={route("history.index")}
                     >
                         <FaHistory className="w-5 h-5" />
                         <span className="ml-4">Audit Log</span>

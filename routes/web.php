@@ -6,6 +6,7 @@ use App\Http\Controllers\AssetExtendedController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\WorkStationController;
@@ -75,7 +76,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/asset/{assetNo}', [AssetExtendedController::class, 'update'])->name('assetsextended.update');
     Route::post('/assets/generate-qrcodes', [AssetExtendedController::class, 'generateQRCodes'])->name('assetsextended.generateQRCodes');
     // Route::get('/assets/{id}', [AssetController::class, 'showHistory'])->name('assetsextended.history');
-    Route::get('/history', [AssetExtendedController::class, 'indexHistory'])->name('assetsextended.history');
     // Route::get('/components', [AssetComponentController::class, 'index'])->name('components.index')->middleware(['role:admin']);
     Route::resource('assetComponents', AssetComponentController::class)->middleware(['role:admin']);
     // Department Routes
@@ -86,9 +86,12 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('workstations', WorkStationController::class)->middleware(RoleMiddleware::class . ':admin');
     // Products
     Route::resource('products', ProductController::class)->middleware(RoleMiddleware::class . ':admin');
+
+    // History Controller
+    Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
 });
 
-Route::get('/assets/{systemAssetId}/qr', [AssetController::class, 'generateQrCode'])->name('assets.qr');
-Route::get('/assets/detail/{systemAssetId}', [AssetController::class, 'showAssetDetail'])->name('assets.detail');
+Route::get('/assets/qr/{systemAssetId}', [AssetController::class, 'generateQrCode'])->name('assets.qr');
+Route::get('/assets/view/{systemAssetId}', [AssetController::class, 'showAssetDetail'])->name('assets.detail');
 
 // Route::get('/pdf/employee_asset_report/{employeeId}', [AssetController::class, 'viewEmployeeAssets']);

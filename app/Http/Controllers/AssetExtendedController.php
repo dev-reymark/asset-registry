@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArchivedAssetDetail;
 use App\Models\Asset;
 use App\Models\AssetComponent;
 use App\Models\AssetDetail;
@@ -156,6 +157,33 @@ class AssetExtendedController extends Controller
 
             Log::info('AssetDetail record created', ['id' => $assetDetail->id]);
 
+            $assetDetail->logAction('create', [
+                'to' => [
+                    'ASSETID'        => $assetDetail->ASSETID,
+                    'ASSETNO'        => $assetDetail->ASSETNO,
+                    'SYSTEMASSETID'  => $assetDetail->SYSTEMASSETID,
+                    'EMPLOYEEID'     => $assetDetail->EMPLOYEEID,
+                    'EMPLOYEENAME'   => $validated['EMPLOYEENAME'] ?? null,
+                    'LOCATIONID'     => $assetDetail->LOCATIONID,
+                    'PRODUCTID'      => $assetDetail->PRODUCTID,
+                    'DESCRIPTION'    => $assetDetail->DESCRIPTION,
+                    'MODEL'          => $assetDetail->MODEL,
+                    'SERIALNO'       => $assetDetail->SERIALNO,
+                    'ISSUEDTO'       => $assetDetail->ISSUEDTO,
+                    'DATEISSUUED'    => $assetDetail->DATEISSUUED,
+                    'IMAGEPATH'      => json_decode($assetDetail->IMAGEPATH, true),
+                    'STATUS'         => $assetDetail->STATUS,
+                    'CONDITIONS'     => $assetDetail->CONDITIONS,
+                    'WORKSTATION'    => $assetDetail->WORKSTAION,
+                    'TYPESIZE'       => $assetDetail->TYPESIZE,
+                    'NOPRINT'        => $assetDetail->NOPRINT,
+                    'WITHCOMPONENTS' => $assetDetail->WITHCOMPONENTS,
+                    'SYSTEMCOMPONENTID' => $assetDetail->SYSTEMCOMPONENTID,
+                    'archived'       => $assetDetail->archived,
+                    'COMPONENTS'     => $components,
+                ],
+            ]);
+
             foreach ($components as $index => $component) {
                 $componentDetail = ComponentDetail::create([
                     'EMPLOYEEID' => $validated['EMPLOYEEID'],
@@ -214,7 +242,6 @@ class AssetExtendedController extends Controller
             'PRODUCTID' => 'nullable|exists:products,PRODUCTID',
             'DESCRIPTION' => 'nullable|string|max:255',
             'MODEL' => 'nullable|string|max:255',
-            // 'SERIALNO' => 'nullable|unique:AssetDetails,SERIALNO,' . $assetNo . ',ASSETNO',
             'SERIALNO' => 'nullable|string',
             'ISSUEDTO' => 'nullable|string|max:255',
             'DATEISSUUED' => 'nullable|date',
@@ -241,8 +268,11 @@ class AssetExtendedController extends Controller
         try {
             $assetDetail = AssetDetail::findOrFail($assetNo);
 
+            // Get original data before update for diff calculation
+            $originalData = $assetDetail->toArray();
+
             $existingPaths = json_decode($request->input('existing_images'), true) ?? [];
-            $imagePaths = []; // Initialize $imagePaths as an empty array
+            $imagePaths = [];
             $imagePaths = array_merge($imagePaths, $existingPaths);
 
             if ($request->hasFile('new_images')) {
@@ -265,7 +295,7 @@ class AssetExtendedController extends Controller
             $components = $validated['COMPONENT'] ?? [];
             $withComponents = is_array($components) && count($components) > 0;
 
-            // Update the main asset detail
+            // Update main asset detail
             $assetDetail->update([
                 'EMPLOYEEID' => $validated['EMPLOYEEID'],
                 'ASSETID' => $validated['ASSETID'],
@@ -289,7 +319,7 @@ class AssetExtendedController extends Controller
             ]);
 
             // Update related ComponentDetails
-            ComponentDetail::where('ASSETNO', $assetNo)->delete(); // Clear old components
+            ComponentDetail::where('ASSETNO', $assetNo)->delete();
 
             foreach ($components as $component) {
                 ComponentDetail::create([
@@ -302,7 +332,33 @@ class AssetExtendedController extends Controller
                 ]);
             }
 
+            // Get fresh data after update
+            $newData = $assetDetail->fresh()->toArray();
+
+            // Calculate changes
+            $changes = [];
+            foreach ($newData as $key => $value) {
+                $originalValue = $originalData[$key] ?? null;
+
+                // Decode JSON fields for comparison
+                if (in_array($key, ['IMAGEPATH', 'COMPONENT'])) {
+                    $originalValue = is_string($originalValue) ? json_decode($originalValue, true) : $originalValue;
+                    $value = is_string($value) ? json_decode($value, true) : $value;
+                }
+
+                if ($originalValue != $value) {
+                    $changes[$key] = [
+                        'from' => $originalValue,
+                        'to' => $value,
+                    ];
+                }
+            }
+
+            // Log the update action with changes
+            $assetDetail->logAction('update', $changes);
+
             DB::commit();
+
             return redirect()->route('assetsextended.edit', ['assetNo' => $assetNo])->with('success', 'Asset detail updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -325,55 +381,105 @@ class AssetExtendedController extends Controller
 
         DB::transaction(function () use ($validated) {
             $employee = Employee::where('EMPLOYEEID', $validated['employee_id'])->first();
-            $asset    = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
+            $asset = Asset::where('EMPLOYEEID', optional($employee)->EMPNO)->first();
 
-            // Get previous employee IDs for logging
-            $oldEmployeeIds = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])
-                ->pluck('EMPLOYEEID')
-                ->unique()
+            Log::debug('Starting asset transfer', [
+                'validated_data' => $validated,
+                'employee_found' => optional($employee)->only(['EMPLOYEEID', 'EMPLOYEENAME', 'EMPNO']),
+            ]);
+
+            // 🟢 Retrieve assetDetails BEFORE update
+            $assetDetails = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->get();
+            Log::debug('Retrieved asset details before update', [
+                'count' => $assetDetails->count(),
+                'asset_nos' => $validated['asset_nos'],
+            ]);
+
+            // 🟢 Get old employee IDs before update
+            $oldEmployeeIds = $assetDetails->pluck('EMPLOYEEID')->unique()
                 ->filter(fn($id) => $id != $validated['employee_id']);
+
+            // 🟢 Capture old data BEFORE update
+            $oldDataMap = [];
+            foreach ($assetDetails as $detail) {
+                $oldDataMap[$detail->ASSETNO] = $detail->only([
+                    'EMPLOYEEID',
+                    'LOCATIONID',
+                    'STATUS',
+                    'ASSETNUMBER',
+                    'SYSTEMASSETID'
+                ]);
+            }
+
+            Log::debug('Captured old asset data for transfer', ['old_data_map' => $oldDataMap]);
 
             // Update asset details
             AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->update([
-                'EMPLOYEEID'  => $validated['employee_id'],
-                'LOCATIONID'  => $validated['location_id'],
-                'STATUS'      => $validated['status'],
-                'ISSUEDTO'    => optional($employee)->EMPNO,
-                'ASSETID'     => optional($asset)->ASSETSID,
+                'EMPLOYEEID' => $validated['employee_id'],
+                'LOCATIONID' => $validated['location_id'],
+                'STATUS'     => $validated['status'],
+                'ISSUEDTO'   => optional($employee)->EMPNO,
+                'ASSETID'    => optional($asset)->ASSETSID,
             ]);
+            Log::debug('Updated asset details with new employee/location/status');
 
             // Reorder asset numbers for old employees
             foreach ($oldEmployeeIds as $oldId) {
                 AssetDetail::reorderAssetNumbersForEmployee($oldId);
+                Log::debug("Reordered asset numbers for previous employee", ['EMPLOYEEID' => $oldId]);
             }
 
-            // Reorder for new employee
+            // Recalculate asset numbers
             $maxAssetNumber = AssetDetail::where('EMPLOYEEID', $validated['employee_id'])
                 ->whereNotIn('ASSETNO', $validated['asset_nos'])
                 ->where('archived', false)
                 ->max('ASSETNUMBER') ?? 0;
 
-            $assetDetails = AssetDetail::whereIn('ASSETNO', $validated['asset_nos'])->get();
+            Log::debug('Calculated max asset number for employee', [
+                'employee_id' => $validated['employee_id'],
+                'max_asset_number' => $maxAssetNumber,
+            ]);
 
+            // Apply new asset numbers + logging
             foreach ($assetDetails as $detail) {
-                $oldData = $detail->only(['EMPLOYEEID', 'LOCATIONID', 'STATUS', 'ASSETNUMBER', 'SYSTEMASSETID']);
+                $oldData = $oldDataMap[$detail->ASSETNO];
 
-                $detail->ASSETNUMBER    = ++$maxAssetNumber;
-                $detail->SYSTEMASSETID  = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
+                $detail->ASSETNUMBER = ++$maxAssetNumber;
+                $detail->SYSTEMASSETID = "{$validated['employee_id']}-{$detail->PRODUCTID}-{$detail->ASSETNUMBER}";
                 $detail->save();
 
-                // Log history
+                $fromData = array_merge($oldData, [
+                    'EMPLOYEENAME' => optional(Employee::where('EMPNO', $oldData['EMPLOYEEID'])->first())->EMPLOYEENAME,
+                    'LOCATIONNAME' => optional(Location::where('LOCATIONID', $oldData['LOCATIONID'])->first())->LOCATIONNAME,
+                ]);
+
+                $toData = array_merge(
+                    $detail->only(['EMPLOYEEID', 'LOCATIONID', 'STATUS', 'ASSETNUMBER', 'SYSTEMASSETID']),
+                    [
+                        'EMPLOYEENAME' => optional($employee)->EMPLOYEENAME,
+                        'LOCATIONNAME' => optional($detail->location)->LOCATIONNAME,
+                    ]
+                );
+
+                Log::debug('Logging asset transfer', [
+                    'asset_no' => $detail->ASSETNO,
+                    'from' => $fromData,
+                    'to' => $toData,
+                ]);
+
                 if (method_exists($detail, 'logAction')) {
                     $detail->logAction('transfer', [
-                        'from' => $oldData,
-                        'to'   => $detail->only(['EMPLOYEEID', 'LOCATIONID', 'STATUS', 'ASSETNUMBER', 'SYSTEMASSETID']),
+                        'from' => $fromData,
+                        'to'   => $toData,
                     ]);
                 }
             }
 
-            // Final reorder for new employee
+            // Final reorder for the new employee
             AssetDetail::reorderAssetNumbersForEmployee($validated['employee_id']);
+            Log::debug("Reordered asset numbers for new employee", ['EMPLOYEEID' => $validated['employee_id']]);
         });
+
 
         return redirect()->route('assets.index')->with('success', 'Assets transferred successfully.');
     }
@@ -504,11 +610,44 @@ class AssetExtendedController extends Controller
 
         $asset = AssetDetail::findOrFail($assetNo);
 
-        $asset->archive(
-            $request->input('archival_reason'),
-            $request->input('status'),
-            $request->input('conditions')
-        );
+        $oldData = [
+            'STATUS'         => trim($asset->STATUS),
+            'CONDITIONS'     => trim($asset->CONDITIONS),
+            'archived'       => (bool) $asset->archived,
+            'ASSETNO'        => $asset->ASSETNO,
+            'ASSETNUMBER'    => $asset->ASSETNUMBER,
+            'SYSTEMASSETID'  => $asset->SYSTEMASSETID,
+        ];
+
+        // ✅ Step 1: mark asset as archived
+        $asset->archived = true;
+        $asset->save();
+
+        // ✅ Step 2: create archived_asset_details record
+        ArchivedAssetDetail::create([
+            'asset_detail_id' => $asset->ASSETNO,
+            'archival_reason' => $request->input('archival_reason'),
+            'status'          => $request->input('status'),
+            'conditions'      => $request->input('conditions'),
+            'archived_at'     => now(),
+        ]);
+
+        $newData = [
+            'STATUS'         => $request->input('status') ?? trim($asset->STATUS),
+            'CONDITIONS'     => $request->input('conditions') ?? trim($asset->CONDITIONS),
+            'archived'       => true,
+            'ASSETNO'        => $asset->ASSETNO,
+            'ASSETNUMBER'    => $asset->ASSETNUMBER,
+            'SYSTEMASSETID'  => $asset->SYSTEMASSETID,
+            'archival_reason' => $request->input('archival_reason'),
+        ];
+
+        if (method_exists($asset, 'logAction')) {
+            $asset->logAction('archive', [
+                'from' => $oldData,
+                'to'   => $newData,
+            ]);
+        }
 
         return redirect()->route('assets.index')->with('success', 'Asset archived successfully.');
     }
@@ -606,12 +745,5 @@ class AssetExtendedController extends Controller
     //     ]);
     // }
 
-    public function indexHistory()
-    {
-        $histories = History::latest()->paginate(5);
-
-        return Inertia::render('History/LogsHistory', [
-            'histories' => $histories,
-        ]);
-    }
+    
 }

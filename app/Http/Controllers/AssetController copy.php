@@ -414,9 +414,8 @@ class AssetController extends Controller
      */
     public function generateQrCode($systemAssetId)
     {
-        AssetDetail::where('SYSTEMASSETID', $systemAssetId)->firstOrFail();
+        $assetDetail = AssetDetail::where('SYSTEMASSETID', $systemAssetId)->firstOrFail();
         $url = URL::route('assets.detail', ['systemAssetId' => $systemAssetId], true);
-        Log::info($url);
 
         // Create QR Code
         $builder = new Builder(
@@ -439,7 +438,7 @@ class AssetController extends Controller
     /**
      * Show detailed asset information via QR.
      *
-     * @param string $systemAssetId
+     * @param int $systemAssetId
      * @return \Inertia\Response
      */
     public function showAssetDetail($systemAssetId): Response
@@ -447,13 +446,6 @@ class AssetController extends Controller
         $assetDetail = AssetDetail::where('SYSTEMASSETID', $systemAssetId)
             ->with('asset')
             ->firstOrFail();
-
-        // Log scan action with date, time, and relevant fields
-        $assetDetail->logAction('scanned_qr', [
-            'system_asset_id' => $assetDetail->SYSTEMASSETID,
-            'scanned_at' => now()->toDateTimeString(),
-            'scanned_by' => Auth::check() ? Auth::user()->name : null,
-        ]);
 
         return Inertia::render('AssetDetailView', [
             'assetDetail' => $assetDetail,
@@ -577,7 +569,7 @@ class AssetController extends Controller
         foreach ($employee->assets as $asset) {
             foreach ($asset->assetDetails as $detail) {
                 // Generate the QR code based on SYSTEMASSETID
-                $url = URL::route('assets.detail', ['systemAssetId' => $detail->SYSTEMASSETID]);
+                $url = URL::route('assets.show', ['id' => $detail->SYSTEMASSETID]);
 
                 $builder = new Builder(
                     writer: new PngWriter(),
