@@ -128,14 +128,15 @@ class AssetController extends Controller
     {
         $asset = Asset::with([
             'employee.department',
-            'employee.location'
+            'employee.location',
         ])->findOrFail($id);
 
         $asset->load([
             'assetDetails' => function ($q) {
                 $q->where('archived', false)->with([
                     'location',
-                    'componentDetails.assetComponent'
+                    'componentDetails.assetComponent',
+                    'latestScan',
                 ]);
             }
         ]);

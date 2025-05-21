@@ -314,6 +314,19 @@ export default function AssetView() {
                                             {selectedAssetDetail.CONDITIONS ??
                                                 "--"}
                                         </p>
+
+                                        <p>
+                                            <span className="font-semibold">
+                                                Last Audit:
+                                            </span>{" "}
+                                            {selectedAssetDetail?.latest_scan
+                                                ?.changes?.scanned_at
+                                                ? new Date(
+                                                      selectedAssetDetail.latest_scan.changes.scanned_at
+                                                  ).toLocaleString()
+                                                : "--"}
+                                        </p>
+
                                         <Button
                                             color="primary"
                                             variant="light"
