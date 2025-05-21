@@ -147,4 +147,11 @@ class AssetDetail extends Model
     {
         return $this->morphMany(History::class, 'model', 'model_type', 'model_id');
     }
+
+    public function latestScan()
+    {
+        return $this->morphOne(History::class, 'subject', 'model_type', 'model_id')
+            ->where('action', 'scanned_qr')
+            ->latestOfMany();
+    }
 }

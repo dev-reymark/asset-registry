@@ -17,6 +17,9 @@ export const AssetDetails = ({
     onOpenChange,
     onComponentModalOpen,
 }) => {
+    const assetDetail = selectedAsset?.asset_details?.[0];
+    const lastScan = assetDetail?.latest_scan;
+
     return (
         <Modal
             isOpen={isOpen}
@@ -96,6 +99,25 @@ export const AssetDetails = ({
                                                     ?.CONDITIONS
                                             }
                                         </p>
+
+                                        <p>
+                                            <span className="font-semibold">
+                                                Last Audit:
+                                            </span>{" "}
+                                            {lastScan?.changes?.scanned_at
+                                                ? new Date(
+                                                      lastScan.changes.scanned_at
+                                                  ).toLocaleString()
+                                                : "--"}
+                                        </p>
+                                        {/* <p>
+                                            <span className="font-semibold">
+                                                Scanned By:
+                                            </span>{" "}
+                                            {lastScan?.changes?.scanned_by ||
+                                                "N/A"}
+                                        </p> */}
+
                                         <Button
                                             color="primary"
                                             variant="light"

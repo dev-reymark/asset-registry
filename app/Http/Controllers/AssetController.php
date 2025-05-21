@@ -39,7 +39,7 @@ class AssetController extends Controller
      */
     public function index(Request $request): Response
     {
-        $query = Asset::with('assetDetails.location', 'assetDetails.componentDetails.assetComponent', 'employee.department', 'employee.location')->active();
+        $query = Asset::with('assetDetails.location', 'assetDetails.componentDetails.assetComponent', 'employee.department', 'employee.location', 'assetDetails.latestScan')->active();
         $location = Location::all();
         $employees = Employee::all();
         // Apply search filter if search query is provided
@@ -448,10 +448,12 @@ class AssetController extends Controller
             ->with('asset')
             ->firstOrFail();
 
+        $scannedAt = Carbon::now()->toIso8601String();
+
         // Log scan action with date, time, and relevant fields
         $assetDetail->logAction('scanned_qr', [
             'system_asset_id' => $assetDetail->SYSTEMASSETID,
-            'scanned_at' => now()->toDateTimeString(),
+            'scanned_at' => $scannedAt,
             'scanned_by' => Auth::check() ? Auth::user()->name : null,
         ]);
 
