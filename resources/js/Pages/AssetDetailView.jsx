@@ -1,6 +1,6 @@
 import { Head, usePage } from "@inertiajs/react";
 import Authenticated from "../Layouts/Authenticated";
-import { Button } from "@heroui/react";
+import { Button, Link } from "@heroui/react";
 
 export default function AssetDetailView() {
     const { assetDetail, title, description, error } = usePage().props;
