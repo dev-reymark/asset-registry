@@ -31,11 +31,16 @@ export default function AssetDetailView() {
         <div className="p-6 bg-white shadow-md rounded-lg">
             <Head title={title} />
 
-            {/* <div className="my-6">
-                <Button color="primary" variant="flat" as={Link} href="/">
-                    ← Back to 
+            <div className="my-6">
+                <Button
+                    color="primary"
+                    variant="flat"
+                    as={Link}
+                    href="https://172.16.13.215"
+                >
+                    ← Back to Home
                 </Button>
-            </div> */}
+            </div>
 
             <h1 className="text-2xl font-bold">{title}</h1>
             <p className="text-gray-600">{description}</p>
