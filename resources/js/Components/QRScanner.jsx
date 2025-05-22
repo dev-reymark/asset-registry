@@ -5,7 +5,7 @@ const QRScanner = () => {
     const [scanResult, setScanResult] = useState(null);
     const scannerRef = useRef(null);
 
-    const TARGET_IP = "https://172.16.13.215";
+    const TARGET_IP = "https://172.16.13.215/";
     useEffect(() => {
         scannerRef.current = new Html5QrcodeScanner("reader", {
             fps: 10,
