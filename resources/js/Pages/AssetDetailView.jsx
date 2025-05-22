@@ -1,6 +1,6 @@
 import { Head, usePage } from "@inertiajs/react";
 import Authenticated from "../Layouts/Authenticated";
-import { Button, Link } from "@heroui/react";
+import { Button } from "@heroui/react";
 
 export default function AssetDetailView() {
     const { assetDetail, title, description, error } = usePage().props;
@@ -31,16 +31,11 @@ export default function AssetDetailView() {
         <div className="p-6 bg-white shadow-md rounded-lg">
             <Head title={title} />
 
-            <div className="my-6">
-                <Button
-                    color="primary"
-                    variant="flat"
-                    as={Link}
-                    href="https://assetregistry.phdatalogicorp.net"
-                >
-                    ← Back to Home
+            {/* <div className="my-6">
+                <Button color="primary" variant="flat" as={Link} href="/">
+                    ← Back to 
                 </Button>
-            </div>
+            </div> */}
 
             <h1 className="text-2xl font-bold">{title}</h1>
             <p className="text-gray-600">{description}</p>
