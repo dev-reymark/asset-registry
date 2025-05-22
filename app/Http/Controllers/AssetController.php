@@ -419,7 +419,7 @@ class AssetController extends Controller
         // $url = URL::route('assets.detail', ['systemAssetId' => $systemAssetId], true);
         // Log::info($url);
 
-        $ipBase = 'https://172.16.13.215/';
+        $ipBase = 'https://172.16.13.215';
 
         // Manually build the URL using the route path and IP
         $routePath = route('assets.detail', ['systemAssetId' => $systemAssetId], false); // false means return relative path only

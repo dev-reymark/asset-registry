@@ -1,1 +1,0 @@
-import{d as e}from"./chunk-SLABUSGS-Bl7IaLmR.js";import{r as l,u as s,j as v}from"./app-B0X8LBby.js";var x=l.forwardRef(function(o,i){var r,a;const t=s(),n=(a=(r=o.validationBehavior)!=null?r:t==null?void 0:t.validationBehavior)!=null?a:"native";return v.jsx(e,{...o,ref:i,validationBehavior:n})});export{x as F};
