@@ -416,8 +416,14 @@ class AssetController extends Controller
     public function generateQrCode($systemAssetId)
     {
         AssetDetail::where('SYSTEMASSETID', $systemAssetId)->firstOrFail();
-        $url = URL::route('assets.detail', ['systemAssetId' => $systemAssetId], true);
-        Log::info($url);
+        // $url = URL::route('assets.detail', ['systemAssetId' => $systemAssetId], true);
+        // Log::info($url);
+
+        $ipBase = 'https://172.16.13.215';
+
+        // Manually build the URL using the route path and IP
+        $routePath = route('assets.detail', ['systemAssetId' => $systemAssetId], false); // false means return relative path only
+        $url = $ipBase . $routePath;
 
         // Create QR Code
         $builder = new Builder(
