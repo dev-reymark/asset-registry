@@ -23,7 +23,7 @@ import { parseZonedDateTime } from "@internationalized/date";
 export default function LogsHistory({ histories, filters, actions }) {
     const [search, setSearch] = React.useState(filters.search || "");
     const [actionFilter, setActionFilter] = React.useState(
-        filters.action || "transfer"
+        filters.action || ""
     );
     const [dateRange, setDateRange] = React.useState({
         start: filters.start_date
@@ -129,17 +129,7 @@ export default function LogsHistory({ histories, filters, actions }) {
                 <TableHeader>
                     <TableColumn key="user.name">User</TableColumn>
                     <TableColumn key="action">Action</TableColumn>
-                    {actionFilter === "transfer" ||
-                    actionFilter === "update" ? (
-                        <>
-                            <TableColumn key="from_changes">
-                                Previous
-                            </TableColumn>
-                            <TableColumn key="to_changes">New</TableColumn>
-                        </>
-                    ) : (
-                        <TableColumn key="changes">Description</TableColumn>
-                    )}
+                    <TableColumn key="changes">Description</TableColumn>
                     <TableColumn key="created_at">Date Created</TableColumn>
                 </TableHeader>
                 <TableBody
@@ -149,11 +139,7 @@ export default function LogsHistory({ histories, filters, actions }) {
                     {(history) => (
                         <TableRow key={history.id}>
                             {(columnKey) => {
-                                if (
-                                    columnKey === "changes" ||
-                                    columnKey === "from_changes" ||
-                                    columnKey === "to_changes"
-                                ) {
+                                if (columnKey === "changes") {
                                     const changes = history.changes;
                                     const from = changes?.from || {};
                                     const to = changes?.to || {};
@@ -472,6 +458,9 @@ export default function LogsHistory({ histories, filters, actions }) {
                         selectedKey={actionFilter}
                         onSelectionChange={handleActionChange}
                     >
+                        <Tab key="" title="All">
+                            {renderTable()}
+                        </Tab>
                         {actions.map((action) => (
                             <Tab key={action} title={action}>
                                 {renderTable()}

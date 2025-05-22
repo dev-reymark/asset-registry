@@ -413,7 +413,7 @@ export default function Assets() {
                             </TableColumn>
                             <TableColumn>Location</TableColumn>
                             <TableColumn>Status</TableColumn>
-                            <TableColumn>Date Issued</TableColumn>
+                            <TableColumn>Last Audit</TableColumn>
                             <TableColumn>Actions</TableColumn>
                         </TableHeader>
                         <TableBody emptyContent={"No rows to display."}>
@@ -467,9 +467,10 @@ export default function Assets() {
                                                     </Chip>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {detail.DATEISSUUED
+                                                    {detail.latest_scan?.changes
+                                                        ?.scanned_at
                                                         ? new Date(
-                                                              detail.DATEISSUUED.trim()
+                                                              detail.latest_scan.changes.scanned_at
                                                           ).toLocaleDateString()
                                                         : "--"}
                                                 </TableCell>

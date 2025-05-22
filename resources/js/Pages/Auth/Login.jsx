@@ -33,7 +33,7 @@ export default function Login() {
 
             const user = response.data.user;
 
-            toast.success("Logged in successfully");
+            toast.success("Success");
 
             if (user.role === "admin") {
                 router.visit("/");
@@ -53,7 +53,7 @@ export default function Login() {
             <div className="bg-gray-50 min-h-screen flex items-center justify-center p-4">
                 <Card className="flex items-center justify-center w-full max-w-sm gap-1">
                     <div className="flex w-full max-w-sm flex-col gap-4 rounded-large px-8 pb-10 pt-6">
-                        <p className="pb-4 text-left text-3xl font-semibold">
+                        <p className="text-left text-3xl font-semibold">
                             Log In
                             <span
                                 aria-label="emoji"
@@ -63,6 +63,10 @@ export default function Login() {
                                 👋
                             </span>
                         </p>
+                        <p className="text-small text-default-500">
+                            to continue
+                        </p>
+
                         <Form
                             className="flex flex-col gap-4"
                             validationBehavior="native"
@@ -128,17 +132,18 @@ export default function Login() {
                                 )}
                             </Button>
                         </Form>
-                        <div className="flex items-center justify-center mt-6">
+                        <div className="flex items-center justify-center mt-2">
                             <span className="w-1/5 border-b dark:border-gray-600"></span>
-                            <span className="mx-2 text-xs text-gray-500 uppercase dark:text-gray-400">
-                                or scan qr code
+                            <span className="mx-2 text-center text-xs text-gray-500 uppercase dark:text-gray-400">
+                                Asset Registry @ {new Date().getFullYear()}.
+                                Datalogic Systems Comporation
                             </span>
                             <span className="w-1/5 border-b dark:border-gray-600"></span>
                         </div>
 
-                        <div className="flex justify-center mt-4">
+                        {/* <div className="flex justify-center mt-4">
                             <QRScanner />
-                        </div>
+                        </div> */}
                     </div>
                 </Card>
             </div>

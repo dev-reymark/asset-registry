@@ -5,7 +5,6 @@ const QRScanner = () => {
     const [scanResult, setScanResult] = useState(null);
     const scannerRef = useRef(null);
 
-    const TARGET_IP = "https://172.16.13.215:8002";
     useEffect(() => {
         scannerRef.current = new Html5QrcodeScanner("reader", {
             fps: 10,
@@ -15,17 +14,11 @@ const QRScanner = () => {
         scannerRef.current.render(
             (result) => {
                 setScanResult(result);
-
-                try {
-                    const url = new URL(result);
-                    const redirectTo = `${TARGET_IP}${url.pathname}${url.search}${url.hash}`;
-                    window.location.href = redirectTo;
-                } catch (e) {
-                    console.error("Invalid URL scanned:", e);
-                }
+                alert(`QR Code Scanned: ${result}`);
+                window.location.href = result; // Redirects to the scanned URL
             },
             (error) => {
-                console.error("QR scanning error:", error);
+                console.error(error);
             }
         );
 
@@ -39,7 +32,7 @@ const QRScanner = () => {
     return (
         <div>
             {scanResult ? (
-                <p>Redirecting...</p>
+                <p>Redirecting to: {scanResult}</p>
             ) : (
                 <div id="reader" style={{ width: "100%" }}></div>
             )}
